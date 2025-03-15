@@ -2,8 +2,23 @@
 -- Load libraries
 Camera = require 'libs.hump.camera'
 GameState = require 'libs.hump.gamestate'
+Timer = require 'libs.hump.timer'
 Vector = require 'libs.hump.vector'
 Object = require 'libs.classic'
 Husl = require 'libs.husl'
 Inspect = require 'libs.inspect'
 Lume = require 'libs.lume'
+Gamera = require 'libs.gamera'
+Utils = require 'libs.utils'
+
+-- Initialize LUIS
+local initLuis = require "luis.init"
+-- Direct this to your widgets folder.
+Luis = initLuis("luis/widgets")
+-- register flux in luis, some widgets need it for animations
+Luis.flux = require("luis.3rdparty.flux")
+
+-- Register game states
+GAME_STATES = {
+    level1 = require 'src.scenes.level-1'
+}
