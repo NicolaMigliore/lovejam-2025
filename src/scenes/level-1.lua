@@ -14,7 +14,8 @@ local world = ECSWorld()
 
 local Level1 = {
     actionList = {},
-    layers = {}
+    layers = {},
+    bfWorld = nil
 }
 
 function Level1:enter()
@@ -25,7 +26,6 @@ function Level1:enter()
     -- local mapSystem = MapSystem(self.map)
     -- world:registerSystem(mapSystem)
     -- world:registerSystem(ControlSystem)
-    world:registerSystem(PhysicsSystem())
     world:registerSystem(ActionSystem())
     -- world:registerSystem(UISystem())
 
@@ -33,6 +33,11 @@ function Level1:enter()
 
     -- basic ui
     self:configureUI()
+
+    -- setup physics
+    self.bfWorld = BF.newWorld(0, 90.81, true)
+    world:registerSystem(PhysicsSystem(self.bfWorld))
+    self.graphicsSystem:setPhysicsWorld(self.bfWorld)
 
     -- DEBUG
 end
@@ -313,8 +318,10 @@ end
 
 function Level1:setupPlayer(actions)
     if not self.player then
+        local collider = BF.Collider.new(self.bfWorld, 'circle', 64, 64, 5)
+
         -- register entities
-        self.player = Actor(actions)
+        self.player = Actor(actions, collider)
         world:registerEntity(self.player)
     end
 end

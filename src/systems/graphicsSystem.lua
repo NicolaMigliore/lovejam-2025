@@ -46,6 +46,10 @@ end
 
 function Graphics:draw()
     local function drawInCamera(l, t, w, h)
+        if self.bfWorld then
+            self.bfWorld:draw()
+        end
+
         -- draw map
         if self.map then
             self.map:draw()
@@ -101,6 +105,10 @@ function Graphics:setCameraScale()
 
     self.camera:setScale(newCameraScale)
     self.camera:setWindow(0, 0, windowW, windowH)
+end
+
+function Graphics:setPhysicsWorld(bfWorld)
+    self.bfWorld = bfWorld
 end
 
 return Graphics

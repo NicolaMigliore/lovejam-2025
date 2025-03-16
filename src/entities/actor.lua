@@ -9,11 +9,12 @@ local ActionController, Action = actionComponents[1], actionComponents[2]
 
 local Actor = Entity:extend()
 
-function Actor:new(actions)
+function Actor:new(actions, collider)
     Actor.super.new(self)
 
     self.body = Body(Vector(64, 64), Vector(0, 0), 1.5)
     self.size = Size(16, 16)
+    self.collider = collider
 
     local speed = 100
     -- local act1 = Action(function(dt, e) print('go right', e.id) e.body.acceleration = Vector(1, 0) * speed * dt e.actionController.cooldown = false end, 1, 'Go Right')
