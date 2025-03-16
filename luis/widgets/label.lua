@@ -43,7 +43,11 @@ function label.new(value, width, height, row, col, align, customTheme)
 
 		-- Method to set a decorator
 		setDecorator = function(self, decoratorType, ...)
-			self.decorator = decorators[decoratorType].new(self, ...)
+            if decoratorType == nil then
+                self.decorator = nil
+            else
+                self.decorator = decorators[decoratorType].new(self, ...)
+            end
 		end,
 
         setText = function(self, newText)

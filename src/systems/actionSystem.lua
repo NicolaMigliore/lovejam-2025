@@ -22,15 +22,14 @@ function Action:update(dt)
         local hasNextAction = e.actionController.actionIndex <= #e.actionController.actions
         if noCooldown and hasNextAction then
             local action = e.actionController.actions[e.actionController.actionIndex]
-            if action.delay then
-                -- Timer.after(action.delay, function() print('action called') end)
+            if action.delay and not action.executed then
                 local function test()
                     action.fn(dt, e)
+                    action.executed = true
                 end
-                Timer.after(action.delay, test)
+                Timer.during(action.delay, test, function() e.actionController.actionIndex = e.actionController.actionIndex + 1 end)
                 e.actionController.cooldown = true
             end
-            e.actionController.actionIndex = e.actionController.actionIndex + 1
         end
     end
 end

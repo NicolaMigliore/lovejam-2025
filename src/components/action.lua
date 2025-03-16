@@ -5,6 +5,7 @@ function Action:new(fn, delay, label)
     self.delay = delay
     -- self.duration = duration
     self.label = label
+    self.executed = false
 end
 
 function Action:setDelay(newDelay)

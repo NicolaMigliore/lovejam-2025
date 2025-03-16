@@ -18,6 +18,17 @@ function ECSWorld:registerEntity(entity)
     end
 end
 
+function ECSWorld:unregisterEntity(entityId)
+    local e, index = Lume.match(self.entities, function(x) return x.id == entityId end)
+
+    table.remove(self.entities, index)
+
+    -- refresh system queries
+    for _, system in ipairs(self.systems) do
+        system:queryEntities(self.entities)
+    end
+end
+
 function ECSWorld:update(dt)
     for _, system in ipairs(self.systems) do
         if system.update then
