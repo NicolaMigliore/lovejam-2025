@@ -6,7 +6,7 @@ function love.load()
 
     -- Configure game states
     GameState.registerEvents({ 'draw', 'update', 'quit', 'keypressed', 'mousepressed', 'resize' })
-    GameState.switch(GAME_STATES.level1)
+    GameState.switch(GAME_STATES.dungeonPlanner)
 
     -- Configure Luis grid
     Luis.setGridSize(20)
@@ -15,6 +15,8 @@ end
 
 local time = 0
 function love.update(dt)
+    Flux.update(dt)
+    
 	time = time + dt
 	if time >= 1/60 then	
 		Luis.flux.update(time)

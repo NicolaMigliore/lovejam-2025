@@ -10,6 +10,8 @@ Inspect = require 'libs.inspect'
 Lume = require 'libs.lume'
 Gamera = require 'libs.gamera'
 BF = require 'libs.breezefield-master'
+Flux = require 'libs.flux'
+Json = require 'libs.json'
 Utils = require 'libs.utils'
 
 -- Initialize LUIS
@@ -21,5 +23,6 @@ Luis.flux = require("luis.3rdparty.flux")
 
 -- Register game states
 GAME_STATES = {
+    dungeonPlanner = require 'src.scenes.dungeonPlanner',
     level1 = require 'src.scenes.level-1'
 }

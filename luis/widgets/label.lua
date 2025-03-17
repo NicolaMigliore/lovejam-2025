@@ -26,6 +26,7 @@ function label.new(value, width, height, row, col, align, customTheme)
 		position = Vector2D.new((col - 1) * luis.gridSize, (row - 1) * luis.gridSize),
 		theme = labelTheme,
 		decorator = nil,
+        show = true,
         
         defaultDraw = function(self)
             local textTheme = applyThemeToText(self.theme or luis)
@@ -34,6 +35,9 @@ function label.new(value, width, height, row, col, align, customTheme)
 
 		-- Draw method that can use a decorator
 		draw = function(self)
+            if not self.show then
+                return
+            end
 			if self.decorator then
 				self.decorator:draw()
 			else
@@ -52,6 +56,17 @@ function label.new(value, width, height, row, col, align, customTheme)
 
         setText = function(self, newText)
             self.value = newText
+        end,
+
+        getPosition = function(self)
+            return self.position.x, self.position.y
+        end,
+        setPosition = function(self, r, c)
+            self.position = Vector2D.new((c - 1) * luis.gridSize, (r - 1) * luis.gridSize)
+        end,
+
+        setShow = function(self, show)
+            self.show = show
         end
     }
 end
