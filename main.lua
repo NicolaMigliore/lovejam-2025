@@ -4,13 +4,21 @@ require 'globals'
 function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
 
+    -- Configure Luis grid
+    -- Luis.setGridSize(20)
+
+    -- Set your base resolution
+    Luis.baseWidth = 1920--1280
+    Luis.baseHeight = 1080--720
+
+    -- Set window mode using these dimensions
+    love.window.setMode(Luis.baseWidth, Luis.baseHeight, { resizable=true, fullscreen = false })
+    print('setting grid size')
+    Luis.setGridSize(Luis.baseWidth / 60)
+
     -- Configure game states
     GameState.registerEvents({ 'draw', 'update', 'quit', 'keypressed', 'mousepressed', 'resize' })
     GameState.switch(GAME_STATES.dungeonPlanner)
-
-    -- Configure Luis grid
-    Luis.setGridSize(20)
-
 end
 
 local time = 0
@@ -22,7 +30,8 @@ function love.update(dt)
 		Luis.flux.update(time)
 		time = 0
 	end
-
+    -- Update scaling (handles window resizing)
+    Luis.updateScale()
     Luis.update(dt)
     Timer.update(dt)
 end

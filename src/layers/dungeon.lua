@@ -1,5 +1,8 @@
 local Dungeon = Object:extend()
 
+local pW, pH = 20, 2
+local lW, lH = 15, 1
+
 function Dungeon:new(dungeonEvents, questPercentage, targetFloor, currentFloor, events)
     self.layerName = 'dungeon'
 
@@ -13,16 +16,10 @@ function Dungeon:new(dungeonEvents, questPercentage, targetFloor, currentFloor, 
     self.targetFloor = targetFloor
     self.currentFloor = currentFloor
 
-    self.dungeonEventsItems = {}
+    self.floorItems = {}
     self.questPercentageItem = nil
     self:createLayer()
 
-    -- self.events = {
-    --     clickFoodMinus = function() end,
-    --     clickFoodPlus = function() end,
-    --     clickConfirm = function() end,
-    -- }
-    -- self.events = Lume.merge(self.events, events)
 end
 
 function Dungeon:createLayer()
@@ -30,26 +27,24 @@ function Dungeon:createLayer()
 
 
     -- ProgressBar
-    local pW, pH = 20, 2
     local offsetRow, offsetCol = self.gridMaxRow / 2, self.gridMaxCol / 2 - pW / 2
     local p_quest = Luis.createElement(self.layerName, 'ProgressBar', self.questPercentage, pW, pH, offsetRow, offsetCol)
     self.questPercentageItem = p_quest
 
     -- Dungeon Events
-    local lW, lH = 10, 1
-    offsetRow, offsetCol = self.gridMaxRow / 2 - pH -2, self.gridMaxCol / 2 - lW / 2
+    offsetRow, offsetCol = self.gridMaxRow / 2 - pH - 2, self.gridMaxCol / 2 - lW / 2
     for index = 1, self.targetFloor, 1 do
-    -- for index, evt in ipairs(self.dungeonEvents) do
         -- floor
-        local text = 'Floor '..index
+        local text = 'Floor ' .. index
         local evt = self.dungeonEvents[index]
         if evt then
-            text = text .. ' - ' .. evt.label
+            text = text .. ' - ' .. evt.label .. ' ' .. evt.modifier
         end
-        local l_floor = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow + index * 2, offsetCol, 'center')
+        local l_floor = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow + index * 2, offsetCol,
+            'center')
 
         -- save item
-        table.insert(self.dungeonEventsItems, { label = l_floor, row = offsetRow + index * 2, col = offsetCol})
+        table.insert(self.floorItems, { label = l_floor, row = offsetRow + index * 2, col = offsetCol })
     end
 end
 
@@ -64,8 +59,9 @@ function Dungeon:update(dt, dungeonEvents, questPercentage, targetFloor, current
     self.questPercentageItem:setValue(self.questPercentage)
 
     -- update computed labels
-    for index, item in ipairs(self.dungeonEventsItems) do
-        -- local item = self.dungeonEventsItems[index]
+    self:setFloorLabels()
+    for index = 1, self.targetFloor do
+        local item = self.floorItems[index]
 
         -- local currentIndex = math.floor(#self.dungeonEvents * self.questPercentage) + 1
         local currentIndex = self.currentFloor
@@ -80,11 +76,31 @@ function Dungeon:update(dt, dungeonEvents, questPercentage, targetFloor, current
             item.label:setDecorator("GlowDecorator", { 1, 0.5, 0, 0.1 }, 3)
         end
         -- set position
-        -- local yDelta = #self.dungeonEvents * 2
         local yDelta = self.targetFloor * 2
         local row, col = item.row, item.col
         row = row - self.questPercentage * yDelta
         item.label:setPosition(row, col)
+    end
+end
+
+function Dungeon:setFloorLabels()
+    offsetRow, offsetCol = self.gridMaxRow / 2 - pH - 2, self.gridMaxCol / 2 - lW / 2
+    for index = 1, self.targetFloor, 1 do
+        local item = self.floorItems[index]
+        local evt = self.dungeonEvents[index]
+        local text = 'Floor ' .. index
+        if evt then
+            text = text .. ' - ' .. evt.label .. ' ' .. evt.modifier
+        end
+
+        -- create or update label
+        if not item then
+            item = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow + index * 2, offsetCol, 'center')
+            -- save item
+            table.insert(self.floorItems, { label = item, row = offsetRow + index * 2, col = offsetCol })
+        else
+            item.label:setText(text)
+        end
     end
 end
 
