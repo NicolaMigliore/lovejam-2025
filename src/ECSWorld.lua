@@ -11,7 +11,6 @@ end
 
 function ECSWorld:registerEntity(entity)
     table.insert(self.entities, entity)
-
     -- refresh system queries
     for _, system in ipairs(self.systems) do
         system:queryEntities(self.entities)

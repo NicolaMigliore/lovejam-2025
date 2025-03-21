@@ -84,7 +84,7 @@ function Graphics:draw()
                 love.graphics.circle('fill', drawX, drawY, scaleX)
             end
 
-            -- love.graphics.circle('line', e.body.position.x, e.body.position.y, 4)
+            love.graphics.circle('line', e.body.position.x, e.body.position.y, 4)
         end
     end
 

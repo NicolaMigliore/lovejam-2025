@@ -12,7 +12,9 @@ Gamera = require 'libs.gamera'
 BF = require 'libs.breezefield-master'
 Flux = require 'libs.flux'
 Json = require 'libs.json'
+Anim8 = require 'libs.anim8'
 Utils = require 'libs.utils'
+ECSWorld = require 'src.ECSWorld'
 
 -- Initialize LUIS
 local initLuis = require "luis.init"

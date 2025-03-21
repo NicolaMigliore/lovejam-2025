@@ -8,12 +8,11 @@ function love.load()
     -- Luis.setGridSize(20)
 
     -- Set your base resolution
-    Luis.baseWidth = 1920--1280
-    Luis.baseHeight = 1080--720
+    Luis.baseWidth = 1280
+    Luis.baseHeight = 720
 
     -- Set window mode using these dimensions
     love.window.setMode(Luis.baseWidth, Luis.baseHeight, { resizable=true, fullscreen = false })
-    print('setting grid size')
     Luis.setGridSize(Luis.baseWidth / 60)
 
     -- Configure game states
@@ -37,7 +36,6 @@ function love.update(dt)
 end
 
 function love.draw()
-    Luis.draw()
 end
 
 function love.mousepressed(x, y, button, istouch)

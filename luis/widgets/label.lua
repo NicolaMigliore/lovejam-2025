@@ -18,6 +18,7 @@ end
 -- Label
 function label.new(value, width, height, row, col, align, customTheme)
     local labelTheme = customTheme or luis.theme.text
+    labelTheme.align = align
     return {
         type = "Label",
         value = value,
@@ -39,7 +40,7 @@ function label.new(value, width, height, row, col, align, customTheme)
                 return
             end
 			if self.decorator then
-				self.decorator:draw()
+				self.decorator:draw(self)
 			else
 				self:defaultDraw()
 			end

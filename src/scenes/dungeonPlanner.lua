@@ -1,20 +1,31 @@
 local Plan = require 'src.layers.plan'
 local Dungeon = require 'src.layers.dungeon'
 local Event = require 'src.event'
+local PartyMember = require 'src.entities.partyMember'
 
+local GraphicsSystem = require 'src.systems.graphicsSystem'
+
+local world = ECSWorld()
 local DungeonPlanner = {
+    systems = {},
     layers = {},
-    modes = { 'plan', 'dungeon', 'result' }
+    modes = { 'plan', 'dungeon', 'result' },
+    images = {},
 }
 
 function DungeonPlanner:enter()
+    self.systems.graphics = GraphicsSystem()
+    world:registerSystem(self.systems.graphics)
+
     self.party = {
-        { id = 1, class = 'rogue',  race = 'goblin', maxHp = 10, hp = 5, dmg = 10 },
-        { id = 2, class = 'archer', race = 'orc',    maxHp = 10, hp = 5, dmg = 10 }
+        -- { id = 1, class = 'rogue',  race = 'goblin', maxHp = 10, hp = 5, dmg = 10 },
+        -- { id = 2, class = 'archer', race = 'orc',    maxHp = 10, hp = 5, dmg = 10 }
     }
+    self:addPartyMember()
     self.inventory = {
         food = 10,
         gold = 5,
+        potions = 0,
     }
 
     self.targetFloor = 3
@@ -52,6 +63,18 @@ function DungeonPlanner:enter()
         clickFloorPlus = function()
             self.targetFloor = self.targetFloor + 1
         end,
+        clickPotionsMinus = function()
+            if self.inventory.potions > 0 then
+                self.inventory.gold = self.inventory.gold + 5
+                self.inventory.potions = self.inventory.potions - 1
+            end
+        end,
+        clickPotionsPlus = function()
+            if self.inventory.gold > 4 then
+                self.inventory.gold = self.inventory.gold - 5
+                self.inventory.potions = self.inventory.potions + 1
+            end
+        end,
         clickConfirm = function()
             self:setModeDungeon()
         end
@@ -60,9 +83,15 @@ function DungeonPlanner:enter()
     self.layers.dungeon = Dungeon(self.events, self.quest, self.targetFloor, self.currentFloor, {})
     -- self:setModeDungeon()
     self:setModePlan()
+
+
+    -- load images
+    self.images.table = love.graphics.newImage('assets/table.png')
 end
 
 function DungeonPlanner:update(dt)
+    world:update(dt)
+    love.graphics.setBackgroundColor(.30, .48, .65)
     if self.mode == 'plan' then
         self.layers.plan:update(dt, self.party, self.inventory, self.targetFloor)
     elseif self.mode == 'dungeon' then
@@ -124,7 +153,6 @@ function DungeonPlanner:update(dt)
                         if member.hp <= 0 then
                             print('removing', Json.encode(member))
                             table.remove(self.party, index)
-                            print(Json.encode(self.party))
                         end
                     end
                 end
@@ -135,12 +163,16 @@ function DungeonPlanner:update(dt)
 end
 
 function DungeonPlanner:draw()
+    love.graphics.draw(self.images.table, 150, 200, 0, 3, 3)
+    world:draw()
     if self.mode == 'plan' then
         -- draw party
+
     end
 
-    -- love.graphics.setColor(1,1,1,1)
-    -- love.graphics.print(self.currentFloor, 200, 200)
+    -- draw UI
+    Luis.draw()
+    -- DEBUG
 end
 
 function DungeonPlanner:keypressed(key, code, isRepeat)
@@ -168,7 +200,7 @@ function DungeonPlanner:generateEvents()
     local eventTypes = { 'inventory_loose', 'inventory_gain', 'trap_single', 'trap_all' }
 
     for floor = 1, self.targetFloor do
-        local floorModifier = math.max(1, math.floor(floor/5))
+        local floorModifier = math.max(1, math.floor(floor / 5))
         local evtType = Lume.randomchoice(eventTypes)
         -- Inventory Loose events
         if evtType == 'inventory_loose' then
@@ -200,9 +232,9 @@ function DungeonPlanner:generateEvents()
             local amount = love.math.random(baseAmount) * -1
             amount = amount * floorModifier -- scale based on floor
             local evtKinds = {
-                { code = 'spikes', label = 'Tripped on Hidden Spikes', targetAttribute = 'hp' },
-                { code = 'floor_uneven', label = 'Tripped on Uneven floor', targetAttribute = 'hp' },
-                { code = 'floor_hole', label = 'Fell in Big Hole', targetAttribute = 'hp' },
+                { code = 'spikes',       label = 'Tripped on Hidden Spikes', targetAttribute = 'hp' },
+                { code = 'floor_uneven', label = 'Tripped on Uneven floor',  targetAttribute = 'hp' },
+                { code = 'floor_hole',   label = 'Fell in Big Hole',         targetAttribute = 'hp' },
             }
             local evtKind = Lume.randomchoice(evtKinds)
             local evt = Event(evtType, evtKind.code, evtKind.label, nil, 'party_single', evtKind.targetAttribute, amount)
@@ -214,9 +246,9 @@ function DungeonPlanner:generateEvents()
             local amount = love.math.random(baseAmount) * -1
             amount = amount * floorModifier -- scale based on floor
             local evtKinds = {
-                { code = 'bolder', label = 'Flattened by Boulder', targetAttribute = 'hp' },
+                { code = 'bolder',     label = 'Flattened by Boulder',    targetAttribute = 'hp' },
                 { code = 'flame_wall', label = 'Ran into Wall of Flames', targetAttribute = 'hp' },
-                { code = 'floor_hole', label = 'Fell in Big Hole', targetAttribute = 'hp' },
+                { code = 'floor_hole', label = 'Fell in Big Hole',        targetAttribute = 'hp' },
             }
             local evtKind = Lume.randomchoice(evtKinds)
             local evt = Event(evtType, evtKind.code, evtKind.label, nil, 'party_single', evtKind.targetAttribute, amount)
@@ -245,6 +277,29 @@ function DungeonPlanner:setModePlan()
     -- Reset events
     -- self.events = {}
     self.executedEvents = {}
+end
+
+function DungeonPlanner:addPartyMember()
+    local pm = PartyMember('rogue')
+    table.insert(self.party, pm)
+    world:registerEntity(pm)
+
+    local pm = PartyMember('mage')
+    table.insert(self.party, pm)
+    world:registerEntity(pm)
+
+    local pm = PartyMember('warrior')
+    table.insert(self.party, pm)
+    world:registerEntity(pm)
+
+    local pm = PartyMember('archer')
+    table.insert(self.party, pm)
+    world:registerEntity(pm)
+end
+
+function DungeonPlanner:generateIcons()
+    local icon
+    self.icons = { icon }
 end
 
 return DungeonPlanner
