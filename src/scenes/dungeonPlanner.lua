@@ -12,11 +12,24 @@ local DungeonPlanner = {
     layers = {},
     modes = { 'plan', 'dungeon', 'result' },
     images = {},
+    music = {},
+    sfx = {}
 }
 
 local partyClasses = { 'rogue', 'mage', 'warrior', 'archer' }
 
+
 function DungeonPlanner:enter()
+    -- load images
+    self.images.table = love.graphics.newImage('assets/table.png')
+
+    -- load music    
+    self.music.tavern = love.audio.newSource('assets/music/The Daily Brew Tavern (LOOP).wav', 'stream')
+    self.music.dungeon = love.audio.newSource('assets/music/Lost.mp3', 'stream')
+
+    -- load sfx
+    self.sfx.click = love.audio.newSource('assets/sounds/click.wav', 'static')
+
     self.systems.graphics = GraphicsSystem()
     world:registerSystem(self.systems.graphics)
 
@@ -45,59 +58,69 @@ function DungeonPlanner:enter()
                 self.inventory.gold = self.inventory.gold + 2
                 self.inventory.food = self.inventory.food - 1
             end
+            self.sfx.click:play()
         end,
         clickFoodPlus = function()
             if self.inventory.gold > 1 then
                 self.inventory.gold = self.inventory.gold - 2
                 self.inventory.food = self.inventory.food + 1
             end
+            self.sfx.click:play()
         end,
         clickFloorMinus = function()
             if self.targetFloor > 1 then
                 self.targetFloor = self.targetFloor - 1
             end
+            self.sfx.click:play()
         end,
         clickFloorPlus = function()
             if self.targetFloor < 10 then
                 self.targetFloor = self.targetFloor + 1
             end
+            self.sfx.click:play()
         end,
         clickPotionsMinus = function()
             if self.inventory.potions > 0 then
                 self.inventory.gold = self.inventory.gold + 5
                 self.inventory.potions = self.inventory.potions - 1
             end
+            self.sfx.click:play()
         end,
         clickPotionsPlus = function()
             if self.inventory.gold > 4 then
                 self.inventory.gold = self.inventory.gold - 5
                 self.inventory.potions = self.inventory.potions + 1
             end
+            self.sfx.click:play()
         end,
         clickConfirm = function()
             if #self.party > 0 then
                 self:setModeDungeon()
             end
+            self.sfx.click:play()
         end,
         nextPartyMemberChange = function(val)
             self.nextPartyClass = val
+            self.sfx.click:play()
         end,
         clickAddPartyMember = function()
             self:addPartyMember(self.nextPartyClass)
+            self.sfx.click:play()
         end
     })
     self.layers.dungeon = Dungeon(self.events, self.quest, self.targetFloor, self.currentFloor, {})
     self.layers.recap = Recap(self.recap, false, {
-        clickContinue = function() self:setModePlan() end,
+        clickContinue = function()
+            self:setModePlan()
+            self.sfx.click:play()
+        end,
         clickExit = function()
             GameState.switch(GAME_STATES.title)
+            self.sfx.click:play()
         end,
     })
     -- self:setModeRecap()
     self:setModePlan()
-
-    -- load images
-    self.images.table = love.graphics.newImage('assets/table.png')
 end
 
 function DungeonPlanner:update(dt)
@@ -105,6 +128,11 @@ function DungeonPlanner:update(dt)
     love.graphics.setBackgroundColor(.30, .48, .65)
     if self.mode == 'plan' then
         self.layers.plan:update(dt, self.party, self.inventory, self.targetFloor)
+
+        -- play music
+        if GAME_SETTINGS.playMusic and not self.music.tavern:isPlaying() then
+            self.music.tavern:play()
+        end
     elseif self.mode == 'dungeon' then
         -- transition to Plan
         if self.quest == 1 then
@@ -317,6 +345,12 @@ function DungeonPlanner:setModeDungeon()
     self.currentFloor = 0
     self.recap = {}
     Flux.to(self, 5, { quest = 1 }):delay(.5)
+
+    -- play music
+    love.audio.stop(self.music.tavern)
+    if GAME_SETTINGS.playMusic and not self.music.dungeon:isPlaying() then
+        self.music.dungeon:play()
+    end
 end
 
 function DungeonPlanner:setModePlan()
@@ -328,6 +362,12 @@ function DungeonPlanner:setModePlan()
     -- Reset events
     -- self.events = {}
     self.executedEvents = {}
+
+    -- play music
+    love.audio.stop(self.music.dungeon)
+    if GAME_SETTINGS.playMusic and not self.music.tavern:isPlaying() then
+        self.music.tavern:play()
+    end
 end
 
 function DungeonPlanner:setModeRecap()

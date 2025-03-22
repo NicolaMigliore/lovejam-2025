@@ -29,3 +29,7 @@ GAME_STATES = {
     dungeonPlanner = require 'src.scenes.dungeonPlanner',
     level1 = require 'src.scenes.level-1'
 }
+
+GAME_SETTINGS = {
+    playMusic = true
+}
