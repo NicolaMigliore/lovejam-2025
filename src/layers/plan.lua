@@ -2,8 +2,11 @@ local Plan = Object:extend()
 
 local IconsImage = love.graphics.newImage('assets/icons.png')
 IconsImage:setFilter('nearest', 'nearest')
+local partyClasses = { 'rogue', 'mage', 'warrior', 'archer' }
+
 function Plan:new(party, inventory, targetFloor, events)
     self.layerName = 'plan'
+    self.containers = {}
 
     local gridCellSize = Luis.getGridSize()
     local screenW, screenH = love.window.getMode()
@@ -27,18 +30,22 @@ function Plan:new(party, inventory, targetFloor, events)
         clickPotionsMinus = function() end,
         clickPotionsPlus = function() end,
         clickConfirm = function() end,
+        nextPartyMemberChange = function() end,
+        clickAddPartyMember = function() end,
     }
     self.events = Lume.merge(self.events, events)
+
 end
 
 function Plan:createLayer()
     Luis.newLayer(self.layerName)
 
     local offsetRow, offsetCol = 2, 2
-    local cW, cH = 11, 13
+    local cW, cH = 11, 19
     local borderImage = love.graphics.newImage('assets/ui.png')
     local c_party = Luis.createElement(self.layerName, 'FlexContainer2', cW, cH, offsetRow, offsetCol, nil, 'partyContainer')
     c_party:setDecorator("Slice9Decorator", borderImage, 6, 6, 6, 6)
+    self.containers.c_party = c_party
     offsetCol = offsetCol
 
 
@@ -52,17 +59,11 @@ function Plan:createLayer()
         -- Name
         local text = '...'
         if member then
-            text = member.race .. ' ' .. member.class
+            -- text = member.race .. ' ' .. member.class
+            text = member.class .. ' ' .. member.name
         end
-        local l_name = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow, offsetCol)
+        local l_name = Luis.newLabel(text, lW, lH, offsetRow, offsetCol)
         c_party:addChild(l_name, offsetRow, offsetCol)
-        
-        -- Avatar
-        if member then
-            local animation = member.animationController.animations.idle
-            local ia_avatar = Luis.createElement(self.layerName, 'IconAnimated', member.animationController.image, animation, iS, offsetRow, offsetCol + lW, nil)
-            c_party:addChild(ia_avatar, offsetRow, offsetCol + lW)
-        end
         offsetRow = offsetRow + lH
 
         -- Stats
@@ -70,14 +71,29 @@ function Plan:createLayer()
         if member then
             text = 'HP: ' .. Utils:round(member.hp, 2) .. '   DMG: ' .. member.dmg
         end
-        local l_stats = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow, offsetCol)
+        local l_stats = Luis.newLabel(text, lW, lH, offsetRow, offsetCol)
         c_party:addChild(l_stats, offsetRow, offsetCol)
         offsetRow = offsetRow + lH
         -- Equipment
 
         -- save item
-        table.insert(self.partyItems, { l_name = l_name, l_stats = l_stats })
+        table.insert(self.partyItems, { l_name = l_name, l_stats = l_stats, ia_avatar = ia_avatar })
     end
+
+    -- Add party member
+    offsetCol = 2
+    offsetRow = offsetRow + 1
+    local ddW, ddH = 9, 2
+    local dd_nextClass = Luis.createElement(self.layerName, 'DropDown', partyClasses, nil, ddW, ddH,function(val) self.events.nextPartyMemberChange(val) end, offsetRow, offsetCol, 4)
+    -- local dd_nextClass = Luis.newDropDown(partyClasses, nil, ddW, ddH,function(val) self.events.nextPartyMemberChange(val) end, offsetRow, offsetCol, 2)
+    c_party:addChild(dd_nextClass, offsetRow, offsetCol)
+
+    offsetRow = offsetRow + ddH + 1
+    -- offsetCol = offsetCol + ddW + 1
+    local b_add_member = Luis.createElement(self.layerName, 'Button', 'Add Member', 9, 2, function() self.events.clickAddPartyMember() end, nil, offsetRow, offsetCol)
+    -- local b_add_member = Luis.newButton('Add', 3, 2, function() self.events.clickAddPartyMember() end, nil, offsetRow, offsetCol)
+    c_party:addChild(b_add_member, offsetRow, offsetCol)
+
 
     -- Inventory Items
     offsetRow = 2
@@ -87,6 +103,7 @@ function Plan:createLayer()
     offsetCol = self.gridMaxCol -8 - lW - iS
     local c_inventory = Luis.createElement(self.layerName, 'FlexContainer2', cW, cH, offsetRow, offsetCol, nil, 'inventoryContainer')
     c_inventory:setDecorator("Slice9Decorator", borderImage, 6, 6, 6, 6)
+    self.containers.c_inventory = c_inventory
 
     -- Gold
     offsetCol = 5
@@ -94,7 +111,7 @@ function Plan:createLayer()
     local i_gold = Luis.createElement(self.layerName, 'Icon', IconsImage, iS, offsetRow, offsetCol, nil, gold_quad)
     c_inventory:addChild(i_gold, offsetRow, offsetCol)
 
-    offsetCol = offsetCol + iS + 1
+    offsetCol = offsetCol + iS
     local text = 'gold: ' .. tostring(self.inventory.gold)
     local l_gold = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow, offsetCol)
     c_inventory:addChild(l_gold, offsetRow, offsetCol)
@@ -196,21 +213,30 @@ function Plan:update(dt, party, inventory, targetFloor)
     self.targetFloor = targetFloor
 
     -- update computed labels
-    -- for index, member in ipairs(self.party) do
-    --     local item = self.partyItems[index]
-    --     item.l_name:setText(member.race .. ' ' .. member.class)
-    --     item.l_stats:setText('HP: ' .. Utils:round(member.hp, 2) .. '   DMG: ' .. member.dmg)
-    -- end
     for index = 1, self.maxPartySize, 1 do
         local member = self.party[index]
         local item = self.partyItems[index]
         if item then
             if member then
-                item.l_name:setText(member.race .. ' ' .. member.class)
+                -- item.l_name:setText(member.race .. ' ' .. member.class)
+                item.l_name:setText(member.class .. ' ' .. member.name)
                 item.l_stats:setText('HP: ' .. Utils:round(member.hp, 2) .. '   DMG: ' .. member.dmg)
+                -- create missing icon
+                local animation = member.animationController.animations.idle
+                if item.ia_avatar then
+                    item.ia_avatar:setAnimation(animation)
+                else
+                    local ia_avatar = Luis.newIconAnimated(member.animationController.image, animation, 2, (index * 3) - 1, 10, nil)
+                    self.containers.c_party:addChild(ia_avatar, (index * 3) - 1, 9)
+                    item.ia_avatar = ia_avatar
+                end
             else
                 item.l_name:setText('...')
                 item.l_stats:setText('HP: ' .. ' ' .. '   DMG: ' .. ' ')
+                if item.ia_avatar then
+                    self.containers.c_party:removeChild(item.ia_avatar)
+                    item.ia_avatar = nil
+                end
             end
         end
     end

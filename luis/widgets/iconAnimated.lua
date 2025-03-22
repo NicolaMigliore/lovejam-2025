@@ -24,7 +24,7 @@ function icon.new(iconPath, animation, size, row, col, customTheme)
 		theme = iconTheme,
 		decorator = nil,
         animation = animation,
-        
+
         defaultDraw = function(self)
             love.graphics.setColor(iconTheme.color)
             self.animation:draw(self.iconImage, self.position.x, self.position.y, 0, self.width / 32, self.height / 32)
@@ -49,6 +49,10 @@ function icon.new(iconPath, animation, size, row, col, customTheme)
 		setDecorator = function(self, decoratorType, ...)
 			self.decorator = decorators[decoratorType].new(self, ...)
 		end,
+
+        setAnimation = function(self, newAnimation)
+            self.animation = newAnimation
+        end,
     }
 end
 

@@ -40,8 +40,7 @@ function Dungeon:createLayer()
         if evt then
             text = text .. ' - ' .. evt.label .. ' ' .. evt.modifier
         end
-        local l_floor = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow + index * 2, offsetCol,
-            'center')
+        local l_floor = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow + index * 2, offsetCol, 'center')
 
         -- save item
         table.insert(self.floorItems, { label = l_floor, row = offsetRow + index * 2, col = offsetCol })
@@ -63,7 +62,6 @@ function Dungeon:update(dt, dungeonEvents, questPercentage, targetFloor, current
     for index = 1, self.targetFloor do
         local item = self.floorItems[index]
 
-        -- local currentIndex = math.floor(#self.dungeonEvents * self.questPercentage) + 1
         local currentIndex = self.currentFloor
 
         -- set visibility
@@ -84,10 +82,23 @@ function Dungeon:update(dt, dungeonEvents, questPercentage, targetFloor, current
 end
 
 function Dungeon:setFloorLabels()
-    offsetRow, offsetCol = self.gridMaxRow / 2 - pH - 2, self.gridMaxCol / 2 - lW / 2
+
+    -- clear exceeding floorItems
+    if #self.floorItems > self.targetFloor then
+        for index, floorItem in ipairs(self.floorItems) do
+            if index > self.targetFloor then
+                local label = floorItem.label
+                Luis.removeElement(self.layerName, label)
+                table.remove(self.floorItems, index)
+            end
+        end
+    end
+    
+    local offsetRow, offsetCol = self.gridMaxRow / 2 - pH - 2, self.gridMaxCol / 2 - lW / 2
     for index = 1, self.targetFloor, 1 do
         local item = self.floorItems[index]
         local evt = self.dungeonEvents[index]
+        local row = offsetRow + index * 2
         local text = 'Floor ' .. index
         if evt then
             text = text .. ' - ' .. evt.label .. ' ' .. evt.modifier
@@ -95,9 +106,9 @@ function Dungeon:setFloorLabels()
 
         -- create or update label
         if not item then
-            item = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow + index * 2, offsetCol, 'center')
+            item = Luis.createElement(self.layerName, 'Label', text, lW, lH, row, offsetCol, 'center')
             -- save item
-            table.insert(self.floorItems, { label = item, row = offsetRow + index * 2, col = offsetCol })
+            table.insert(self.floorItems, { label = item, row = row, col = offsetCol })
         else
             item.label:setText(text)
         end

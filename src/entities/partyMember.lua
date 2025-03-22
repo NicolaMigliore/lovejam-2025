@@ -6,10 +6,16 @@ local PartyMember = Entity:extend()
 
 local idleSpritesFile = 'assets/party-idle.png'
 local classes = {
-    rogue = { race = 'goblin', maxHp = 5, hp = 5, dmg = 4, huger = 1, idleFramesRow = 1 },
-    warrior = { race = 'orc', maxHp = 10, hp = 10, dmg = 4, huger = 5, idleFramesRow = 2 },
-    mage = { race = 'elf', maxHp = 10, hp = 10, dmg = 4, huger = 3, idleFramesRow = 3 },
-    archer = { race = 'human', maxHp = 10, hp = 10, dmg = 4, huger = 3, idleFramesRow = 4 },
+    rogue = { race = 'goblin', maxHp = 5, hp = 5, dmg = 4, hunger = 1, idleFramesRow = 1 },
+    warrior = { race = 'orc', maxHp = 10, hp = 10, dmg = 4, hunger = 5, idleFramesRow = 2 },
+    mage = { race = 'elf', maxHp = 10, hp = 10, dmg = 4, hunger = 3, idleFramesRow = 3 },
+    archer = { race = 'human', maxHp = 10, hp = 10, dmg = 4, hunger = 3, idleFramesRow = 4 },
+}
+local names = {
+    rogue = { 'Snarl', 'Kalp', 'Rangr', 'Trisp', 'Limr', 'Skraak'},
+    warrior = { 'Gorn', 'Slugn', 'Ragnuk', 'Lugnup', 'Truk', 'Snagmu'},
+    mage = { 'Kaal-Sin', 'Servin', 'Alavar', 'Stelfum', 'Faersy', 'Sfabeen'},
+    archer = { 'Gahal', 'Marsel', 'Istia', 'Franler', 'Meeria', 'Laureet'},
 }
 
 function PartyMember:new(class)
@@ -22,7 +28,8 @@ function PartyMember:new(class)
     self.maxHp = classItem.maxHp
     self.hp = classItem.hp
     self.dmg = classItem.dmg
-    self.hunger = classItem.huger
+    self.hunger = classItem.hunger
+    self.name = names[class][love.math.random(#names[class])]
 
     -- setup animations
     self.image = love.graphics.newImage(idleSpritesFile)

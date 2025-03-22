@@ -275,7 +275,7 @@ function flexContainer.new(width, height, row, col, customTheme, containerName)
             if not self.visible then return end
             
             if self.decorator then
-                self.decorator:draw()
+                self.decorator:draw(self)
             else
                 self:defaultDraw()
             end

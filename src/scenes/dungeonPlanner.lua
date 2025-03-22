@@ -1,5 +1,6 @@
 local Plan = require 'src.layers.plan'
 local Dungeon = require 'src.layers.dungeon'
+local Recap = require 'src.layers.recap'
 local Event = require 'src.event'
 local PartyMember = require 'src.entities.partyMember'
 
@@ -13,33 +14,29 @@ local DungeonPlanner = {
     images = {},
 }
 
+local partyClasses = { 'rogue', 'mage', 'warrior', 'archer' }
+
 function DungeonPlanner:enter()
     self.systems.graphics = GraphicsSystem()
     world:registerSystem(self.systems.graphics)
 
-    self.party = {
-        -- { id = 1, class = 'rogue',  race = 'goblin', maxHp = 10, hp = 5, dmg = 10 },
-        -- { id = 2, class = 'archer', race = 'orc',    maxHp = 10, hp = 5, dmg = 10 }
-    }
-    self:addPartyMember()
+    self.party = {}
+    self.nextPartyClass = 'rogue'
     self.inventory = {
-        food = 10,
+        food = 50,
         gold = 5,
-        potions = 0,
+        potions = 1,
     }
 
-    self.targetFloor = 3
+    self.targetFloor = 2
     self.currentFloor = 0
     self.events = {}
     self.executedEvents = {}
+    self.recap = {}
 
-    self.floors = {
-        { label = 'floor -1', events = { self.events[1], self.events[2] } }
-    }
     self.quest = 0
 
     self.mode = 'plan'
-
 
     -- create layers
     self.layers.plan = Plan(self.party, self.inventory, self.targetFloor, {
@@ -61,7 +58,9 @@ function DungeonPlanner:enter()
             end
         end,
         clickFloorPlus = function()
-            self.targetFloor = self.targetFloor + 1
+            if self.targetFloor < 10 then
+                self.targetFloor = self.targetFloor + 1
+            end
         end,
         clickPotionsMinus = function()
             if self.inventory.potions > 0 then
@@ -76,14 +75,23 @@ function DungeonPlanner:enter()
             end
         end,
         clickConfirm = function()
-            self:setModeDungeon()
+            if #self.party > 0 then
+                self:setModeDungeon()
+            end
+        end,
+        nextPartyMemberChange = function(val)
+            self.nextPartyClass = val
+        end,
+        clickAddPartyMember = function()
+            self:addPartyMember(self.nextPartyClass)
         end
     })
-    -- dungeonEvents, questPercentage, targetFloor, currentFloor
     self.layers.dungeon = Dungeon(self.events, self.quest, self.targetFloor, self.currentFloor, {})
-    -- self:setModeDungeon()
+    self.layers.recap = Recap(self.recap, {
+        clickContinue = function() self:setModePlan() end
+    })
+    -- self:setModeRecap()
     self:setModePlan()
-
 
     -- load images
     self.images.table = love.graphics.newImage('assets/table.png')
@@ -97,14 +105,14 @@ function DungeonPlanner:update(dt)
     elseif self.mode == 'dungeon' then
         -- transition to Plan
         if self.quest == 1 then
-            self:setModePlan()
+            self:setModeRecap()
         end
 
         self.layers.dungeon:update(dt, self.events, self.quest, self.targetFloor, self.currentFloor)
 
         -- run floors
         local currentIndex = math.floor(self.targetFloor * self.quest) + 1 --self.currentFloor
-        local runNextFloor = currentIndex > self.currentFloor and currentIndex <= self.targetFloor
+        local runNextFloor = currentIndex > self.currentFloor and currentIndex <= self.targetFloor and #self.party > 0
 
         if runNextFloor then
             -- run event
@@ -116,58 +124,74 @@ function DungeonPlanner:update(dt)
                     -- Execute events
                     if Lume.find({ 'inventory_loose', 'inventory_gain' }, evt.type) then
                         self.inventory[evt.targetAttribute] = self.inventory[evt.targetAttribute] + evt.modifier
+                        local evtRecapMsg = 'Floor '..currentIndex..': '..evt.label
+                        if evt.modifier > 0 then
+                            evtRecapMsg = evtRecapMsg..' +'..evt.modifier
+                        else
+                            evtRecapMsg = evtRecapMsg..' '..evt.modifier
+                        end
+                        table.insert(self.recap, evtRecapMsg)
                     elseif evt.type == 'trap_single' then
                         local randomIndex = love.math.random(#self.party)
                         local randomMember = self.party[randomIndex]
                         randomMember.hp = randomMember.hp + evt.modifier
+                        local evtRecapMsg = 'Floor '..currentIndex..': '..evt.label..' '..randomMember.name..' took '..evt.modifier..' damage'
+                        table.insert(self.recap, evtRecapMsg)
                         if randomMember.hp <= 0 then
+                            -- Kill party member
                             table.remove(self.party, randomIndex)
+                            local evtRecapMsg = 'Floor '..currentIndex..': '..randomMember.name..' died'
+                            table.insert(self.recap, evtRecapMsg)
                         end
                     elseif evt.type == 'trap_all' then
+                        local evtRecapMsg = 'Floor '..currentIndex..': '..evt.label..' all party members took '..evt.modifier..' damage'
+                        table.insert(self.recap, evtRecapMsg)
                         for index, member in ipairs(self.party) do
                             member.hp = member.hp + evt.modifier
                             if member.hp <= 0 then
                                 table.remove(self.party, index)
+                                local evtRecapMsg = 'Floor '..currentIndex..': '..member.name..' died'
+                                table.insert(self.recap, evtRecapMsg)
                             end
                         end
                     end
-
                     table.insert(self.executedEvents, currentIndex, evt)
                 end
             end
 
             -- consume food
-            -- TODO: consume more or less food based on race
-            local toConsume = #self.party * 1
-
-
             local feedOrder = Lume.shuffle(self.party)
             for index, memberClone in ipairs(feedOrder) do
                 local member, memberIndex = Lume.match(self.party, function(m) return m.id == memberClone.id end)
                 if member then
-                    local consumeAmount = 1 -- TODO change based on race
+                    local consumeAmount = member.hunger
                     self.inventory.food = self.inventory.food - consumeAmount
                     if self.inventory.food < 0 then
                         self.inventory.food = 0
                         member.hp = member.hp - 1
+                        local evtRecapMsg = 'Floor '..currentIndex..': '..member.name..' took 1 damage from starving'
+                        table.insert(self.recap, evtRecapMsg)
                         if member.hp <= 0 then
-                            print('removing', Json.encode(member))
                             table.remove(self.party, index)
+                            local evtRecapMsg = 'Floor '..currentIndex..': '..member.name..' died'
+                            table.insert(self.recap, evtRecapMsg)
                         end
                     end
                 end
             end
             self.currentFloor = currentIndex
         end
+    elseif self.mode == 'recap' then
+        self.layers.recap:update(dt, self.recap)
     end
 end
 
 function DungeonPlanner:draw()
-    love.graphics.draw(self.images.table, 150, 200, 0, 3, 3)
     world:draw()
     if self.mode == 'plan' then
         -- draw party
-
+        love.graphics.draw(self.images.table, 150, 200, 0, 3, 3)
+    elseif self.mode == 'dungeon' then
     end
 
     -- draw UI
@@ -192,11 +216,6 @@ end
 
 function DungeonPlanner:generateEvents()
     self.events = {}
-    -- Event('event', 'find_gold', 'Found Gold', nil, 'inventory', 'gold', 10),
-    -- Event('event', 'loose_gold', 'Lost Gold', nil, 'inventory', 'gold', -3),
-    -- Event('event', 'food_rot', 'Food Rot', nil, 'inventory', 'food', -2),
-
-
     local eventTypes = { 'inventory_loose', 'inventory_gain', 'trap_single', 'trap_all' }
 
     for floor = 1, self.targetFloor do
@@ -261,11 +280,13 @@ function DungeonPlanner:setModeDungeon()
     self.mode = 'dungeon'
     self.layers.plan:hideLayer()
     self.layers.dungeon:showLayer()
+    self.layers.recap:hideLayer()
 
     self:generateEvents()
 
     self.quest = 0
     self.currentFloor = 0
+    self.recap = {}
     Flux.to(self, 5, { quest = 1 }):delay(.5)
 end
 
@@ -273,28 +294,25 @@ function DungeonPlanner:setModePlan()
     self.mode = 'plan'
     self.layers.plan:showLayer()
     self.layers.dungeon:hideLayer()
+    self.layers.recap:hideLayer()
 
     -- Reset events
     -- self.events = {}
     self.executedEvents = {}
 end
 
-function DungeonPlanner:addPartyMember()
-    local pm = PartyMember('rogue')
+function DungeonPlanner:setModeRecap()
+    self.mode = 'recap'
+    self.layers.plan:hideLayer()
+    self.layers.dungeon:hideLayer()
+    self.layers.recap:showLayer()
+end
+
+function DungeonPlanner:addPartyMember(class)
+    local pm = PartyMember(class)
     table.insert(self.party, pm)
     world:registerEntity(pm)
 
-    local pm = PartyMember('mage')
-    table.insert(self.party, pm)
-    world:registerEntity(pm)
-
-    local pm = PartyMember('warrior')
-    table.insert(self.party, pm)
-    world:registerEntity(pm)
-
-    local pm = PartyMember('archer')
-    table.insert(self.party, pm)
-    world:registerEntity(pm)
 end
 
 function DungeonPlanner:generateIcons()
