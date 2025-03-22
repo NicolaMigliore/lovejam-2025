@@ -1,5 +1,6 @@
 local Entity = require 'src.entities.entity'
 local Body = require 'src.components.body'
+local Size = require 'src.components.size'
 local AnimationController = require 'src.components.animationController'
 
 local PartyMember = Entity:extend()
@@ -18,7 +19,7 @@ local names = {
     archer = { 'Gahal', 'Marsel', 'Istia', 'Franler', 'Meeria', 'Laureet'},
 }
 
-function PartyMember:new(class)
+function PartyMember:new(class, x, y)
     PartyMember.super.new(self)
 
     -- data
@@ -42,7 +43,8 @@ function PartyMember:new(class)
     self.animationController = AnimationController(self.image, self.animations, 'idle')
 
     -- other components
-    self.body = Body(Vector(-100, -100))
+    self.body = Body(Vector(x, y))
+    self.size = Size(250, 250)
 end
 
 return PartyMember

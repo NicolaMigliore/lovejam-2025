@@ -24,7 +24,7 @@ function DungeonPlanner:enter()
     self.nextPartyClass = 'rogue'
     self.inventory = {
         food = 0,
-        gold = 5,
+        gold = 50,
         potions = 1,
     }
 
@@ -208,10 +208,12 @@ function DungeonPlanner:update(dt)
 end
 
 function DungeonPlanner:draw()
-    world:draw()
     if self.mode == 'plan' then
-        -- draw party
+        -- draw environment
         love.graphics.draw(self.images.table, 150, 200, 0, 3, 3)
+        
+        -- draw party
+        world:draw()
     elseif self.mode == 'dungeon' then
     end
 
@@ -336,7 +338,10 @@ function DungeonPlanner:setModeRecap()
 end
 
 function DungeonPlanner:addPartyMember(class)
-    local pm = PartyMember(class)
+    local x, y = 100 + love.math.random(600), 100 --+ love.math.random(80)
+    y = y + #self.party * 20        -- simulate basic z-sorting
+
+    local pm = PartyMember(class, x, y)
     if pm.cost <= self.inventory.gold then
         self.inventory.gold = self.inventory.gold - pm.cost
         table.insert(self.party, pm)

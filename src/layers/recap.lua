@@ -1,5 +1,6 @@
 local Recap = Object:extend()
 
+local cW, cH = 40, 25
 local pW, pH = 20, 2
 local lW, lH = 15, 2
 
@@ -13,7 +14,7 @@ function Recap:new(eventRecap, isGameOver, events)
         backgroundColor = function() return 1, 1, 1, 1 end,
         borderColor = function() return 1, 1, 1, 1 end,
         borderWidth = 2,
-        padding = gridCellSize * 2,
+        padding = gridCellSize * .005,
         handleSize = 20,
         handleColor = function() return 1, 1, .4, 1 end,
         cornerRadius = 3,
@@ -40,11 +41,10 @@ end
 function Recap:createLayer()
     Luis.newLayer(self.layerName)
 
-    local cW, cH = 40, 25
     local offsetRow, offsetCol = (self.gridMaxRow / 2 - cH/2), (self.gridMaxCol / 2 - cW/2)
     local borderImage = love.graphics.newImage('assets/ui.png')
-    -- local c_recap = Luis.createElement(self.layerName, 'FlexContainer2', cW, cH, offsetRow, offsetCol, nil, 'recapContainer')
-    local c_recap = Luis.createElement(self.layerName, 'FlexContainer', cW, cH, offsetRow, offsetCol, nil, 'recapContainer')
+    local c_recap = Luis.createElement(self.layerName, 'FlexContainer2', cW, cH, offsetRow, offsetCol, nil, 'recapContainer')
+    -- local c_recap = Luis.createElement(self.layerName, 'FlexContainer', cW, cH, offsetRow, offsetCol, self.containerCustomTheme, 'recapContainer')
     c_recap:setDecorator("Slice9Decorator", borderImage, 6, 6, 6, 6)
     self.containers.c_recap = c_recap
 
@@ -54,11 +54,11 @@ function Recap:createLayer()
     for index, evtRecapMsg in ipairs(self.eventRecap) do
         -- local l_floor = Luis.createElement(self.layerName, 'Label', evtRecapMsg, lW, lH, offsetRow + index * 2, offsetCol,
         --     'center')
-        local l_recap = Luis.newLabel(evtRecapMsg, lW, lH, offsetRow + index * 2, offsetCol,'center')
-        c_recap:addChild(l_recap)
+        local l_recap = Luis.newLabel(evtRecapMsg, lW, lH, offsetRow + index, offsetCol,'center')
+        c_recap:addChild(l_recap, offsetRow + index, offsetCol)
 
         -- save item
-        table.insert(self.eventRecapItems, { label = l_recap, row = offsetRow + index * 2, col = offsetCol })
+        table.insert(self.eventRecapItems, { label = l_recap, row = offsetRow + index, col = offsetCol })
     end
 
     -- Continue
@@ -117,7 +117,7 @@ function Recap:setRecapLabels()
         end
     end
 
-    local offsetRow, offsetCol = self.gridMaxRow / 2 - pH - 2, self.gridMaxCol / 2 - lW / 2
+    local offsetRow, offsetCol = .5, cW/2 - lW / 2
     for index = 1, #self.eventRecap, 1 do
         local item = self.eventRecapItems[index]
         local evt = self.eventRecap[index]
@@ -128,10 +128,11 @@ function Recap:setRecapLabels()
 
         -- create or update label
         if not item then
-            local l_recap = Luis.newLabel(evtRecapMsg, lW, lH, offsetRow + index * 2, offsetCol,'center')
-            self.containers.c_recap:addChild(l_recap)
+            local row = offsetRow + index * lH
+            local l_recap = Luis.newLabel(evtRecapMsg, lW, lH, row, offsetCol,'center')
+            self.containers.c_recap:addChild(l_recap, offsetRow + index, offsetCol)
             -- save item
-            table.insert(self.eventRecapItems, { label = l_recap, row = offsetRow + index * 2, col = offsetCol })
+            table.insert(self.eventRecapItems, { label = l_recap, row = row, col = offsetCol })
         else
             item.label:setText(text)
         end

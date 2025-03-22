@@ -22,6 +22,7 @@ end
 
 local time = 0
 function love.update(dt)
+    love.math.setRandomSeed(love.timer.getTime())
     Flux.update(dt)
     
 	time = time + dt
