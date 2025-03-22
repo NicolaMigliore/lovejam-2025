@@ -3,7 +3,7 @@ local Recap = Object:extend()
 local pW, pH = 20, 2
 local lW, lH = 15, 2
 
-function Recap:new(eventRecap, events)
+function Recap:new(eventRecap, isGameOver, events)
     self.layerName = 'recap'
     self.containers = {}
 
@@ -24,12 +24,15 @@ function Recap:new(eventRecap, events)
 
     -- props
     self.eventRecap = eventRecap
+    self.isGameOver = isGameOver
 
     self.eventRecapItems = {}
+    self.buttonItems = {}
     self:createLayer()
 
     self.events = {
         clickContinue = function() end,
+        clickExit = function() end,
     }
     self.events = Lume.merge(self.events, events)
 end
@@ -62,24 +65,40 @@ function Recap:createLayer()
     local bW, bH = 20, 3
     offsetRow = self.gridMaxRow - bH
     offsetCol = self.gridMaxCol / 2 - bW / 2
-    Luis.createElement(self.layerName, 'Button', 'Continue', bW, bH, function() self.events.clickContinue() end, nil,
+    local b_continue = Luis.createElement(self.layerName, 'Button', 'Continue', bW, bH, function() self.events.clickContinue() end, nil,
         offsetRow,
         offsetCol)
+    self.buttonItems.b_continue = b_continue
 end
 
-function Recap:update(dt, eventRecap)
+function Recap:update(dt, eventRecap, isGameOver)
     -- update props
     self.eventRecap = eventRecap
+    self.isGameOver = isGameOver
 
 
     -- update computed labels
     self:setRecapLabels()
     for index, evtRecapMsg in ipairs(self.eventRecap) do
         local item = self.eventRecapItems[index]
+        item.label:setText(evtRecapMsg)
+    end
 
-        -- if item then
-            item.label:setText(evtRecapMsg)
-        -- end
+    -- Show game over message
+    if self.isGameOver then
+        -- remove continue button
+        if self.buttonItems.b_continue then
+            Luis.removeElement(self.layerName, self.buttonItems.b_continue)
+            self.buttonItems.b_continue = nil
+        end
+        -- add exit button
+        if not self.buttonItems.b_exit then
+            local bW, bH = 20, 3
+            local offsetRow = self.gridMaxRow - bH
+            local offsetCol = self.gridMaxCol / 2 - bW / 2
+            local b_exit = Luis.createElement(self.layerName, 'Button', 'Back to Title', bW, bH, function() self.events.clickExit() end, nil, offsetRow, offsetCol)
+            self.buttonItems.b_exit = b_exit
+        end
     end
 end
 

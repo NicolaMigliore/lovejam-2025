@@ -24,6 +24,10 @@ function Title:draw()
     Luis.draw()
 end
 
+function Title:leave()
+    Luis.removeLayer(self.layers.mainMenu.layerName)
+end
+
 function Title:keypressed(key, code, isRepeat)
     if key == 'escape' then
         love.event.quit(0)
@@ -50,17 +54,15 @@ function Title:generateMainMenu()
     local cW, cH = 18, 25
     local offsetRow, offsetCol = self.gridMaxRow / 2 - cH / 2, self.gridMaxCol / 2 - cW / 2
     local borderImage = love.graphics.newImage('assets/ui.png')
-    local c_mainMenu = Luis.createElement(layerName, 'FlexContainer2', cW, cH, offsetRow, offsetCol, nil,'c_mainMenu')
+    local c_mainMenu = Luis.createElement(layerName, 'FlexContainer2', cW, cH, offsetRow, offsetCol, nil, 'c_mainMenu')
     c_mainMenu:setDecorator("Slice9Decorator", borderImage, 6, 6, 6, 6)
 
     -- buttons
     local bW, bH = 9, 2
     offsetRow = offsetRow + 5
     offsetCol = (cW / 2 - bW / 2) + 1
-    local b_add_member = Luis.newButton('New Game', bW, bH, function()
-        GameState.switch(GAME_STATES.dungeonPlanner)
-        Luis.disableLayer(layerName)
-    end, nil, offsetRow, offsetCol)
+    local b_add_member = Luis.newButton('New Game', bW, bH, function() GameState.switch(GAME_STATES.dungeonPlanner) end,
+    nil, offsetRow, offsetCol)
     c_mainMenu:addChild(b_add_member, offsetRow, offsetCol)
 
 

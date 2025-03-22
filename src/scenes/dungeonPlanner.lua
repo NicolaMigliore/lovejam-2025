@@ -23,7 +23,7 @@ function DungeonPlanner:enter()
     self.party = {}
     self.nextPartyClass = 'rogue'
     self.inventory = {
-        food = 50,
+        food = 0,
         gold = 5,
         potions = 1,
     }
@@ -87,8 +87,11 @@ function DungeonPlanner:enter()
         end
     })
     self.layers.dungeon = Dungeon(self.events, self.quest, self.targetFloor, self.currentFloor, {})
-    self.layers.recap = Recap(self.recap, {
-        clickContinue = function() self:setModePlan() end
+    self.layers.recap = Recap(self.recap, false, {
+        clickContinue = function() self:setModePlan() end,
+        clickExit = function()
+            GameState.switch(GAME_STATES.title)
+        end,
     })
     -- self:setModeRecap()
     self:setModePlan()
@@ -124,33 +127,36 @@ function DungeonPlanner:update(dt)
                     -- Execute events
                     if Lume.find({ 'inventory_loose', 'inventory_gain' }, evt.type) then
                         self.inventory[evt.targetAttribute] = self.inventory[evt.targetAttribute] + evt.modifier
-                        local evtRecapMsg = 'Floor '..currentIndex..': '..evt.label
+                        local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' .. evt.label
                         if evt.modifier > 0 then
-                            evtRecapMsg = evtRecapMsg..' +'..evt.modifier
+                            evtRecapMsg = evtRecapMsg .. ' +' .. evt.modifier
                         else
-                            evtRecapMsg = evtRecapMsg..' '..evt.modifier
+                            evtRecapMsg = evtRecapMsg .. ' ' .. evt.modifier
                         end
                         table.insert(self.recap, evtRecapMsg)
                     elseif evt.type == 'trap_single' then
                         local randomIndex = love.math.random(#self.party)
                         local randomMember = self.party[randomIndex]
                         randomMember.hp = randomMember.hp + evt.modifier
-                        local evtRecapMsg = 'Floor '..currentIndex..': '..evt.label..' '..randomMember.name..' took '..evt.modifier..' damage'
+                        local evtRecapMsg = 'Floor ' ..
+                        currentIndex .. ': ' .. evt.label .. ' ' .. randomMember.name ..
+                        ' took ' .. evt.modifier .. ' damage'
                         table.insert(self.recap, evtRecapMsg)
                         if randomMember.hp <= 0 then
                             -- Kill party member
                             table.remove(self.party, randomIndex)
-                            local evtRecapMsg = 'Floor '..currentIndex..': '..randomMember.name..' died'
+                            local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' .. randomMember.name .. ' died'
                             table.insert(self.recap, evtRecapMsg)
                         end
                     elseif evt.type == 'trap_all' then
-                        local evtRecapMsg = 'Floor '..currentIndex..': '..evt.label..' all party members took '..evt.modifier..' damage'
+                        local evtRecapMsg = 'Floor ' ..
+                        currentIndex .. ': ' .. evt.label .. ' all party members took ' .. evt.modifier .. ' damage'
                         table.insert(self.recap, evtRecapMsg)
                         for index, member in ipairs(self.party) do
                             member.hp = member.hp + evt.modifier
                             if member.hp <= 0 then
                                 table.remove(self.party, index)
-                                local evtRecapMsg = 'Floor '..currentIndex..': '..member.name..' died'
+                                local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' .. member.name .. ' died'
                                 table.insert(self.recap, evtRecapMsg)
                             end
                         end
@@ -169,20 +175,35 @@ function DungeonPlanner:update(dt)
                     if self.inventory.food < 0 then
                         self.inventory.food = 0
                         member.hp = member.hp - 1
-                        local evtRecapMsg = 'Floor '..currentIndex..': '..member.name..' took 1 damage from starving'
+                        local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' ..
+                        member.name .. ' took 1 damage from starving'
                         table.insert(self.recap, evtRecapMsg)
                         if member.hp <= 0 then
                             table.remove(self.party, index)
-                            local evtRecapMsg = 'Floor '..currentIndex..': '..member.name..' died'
+                            local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' .. member.name .. ' died'
                             table.insert(self.recap, evtRecapMsg)
                         end
                     end
                 end
             end
+
+            -- consume potions
+            local cureOrder = Lume.shuffle(self.party)
+            for index, memberClone in ipairs(cureOrder) do
+                local member, memberIndex = Lume.match(self.party, function(m) return m.id == memberClone.id end)
+                if member and member.hp < member.maxHp and self.inventory.potions > 0 then
+                    self.inventory.potions = self.inventory.potions - 1
+                    member.hp = member.hp + 1
+                    local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' ..member.name .. ' healed 1 damage using potion'
+                    table.insert(self.recap, evtRecapMsg)
+                end
+            end
+
             self.currentFloor = currentIndex
         end
     elseif self.mode == 'recap' then
-        self.layers.recap:update(dt, self.recap)
+        local isGameOver = #self.party == 0 and self.inventory.gold < 4         -- 4 is the cost of a rogue
+        self.layers.recap:update(dt, self.recap, isGameOver)
     end
 end
 
@@ -197,6 +218,12 @@ function DungeonPlanner:draw()
     -- draw UI
     Luis.draw()
     -- DEBUG
+end
+
+function DungeonPlanner:leave()
+    Luis.removeLayer(self.layers.plan.layerName)
+    Luis.removeLayer(self.layers.dungeon.layerName)
+    Luis.removeLayer(self.layers.recap.layerName)
 end
 
 function DungeonPlanner:keypressed(key, code, isRepeat)
@@ -317,8 +344,6 @@ function DungeonPlanner:addPartyMember(class)
     else
         -- TODO: give player feedback SFX, text color
     end
-
-
 end
 
 function DungeonPlanner:generateIcons()
