@@ -17,7 +17,7 @@ function love.load()
 
     -- Configure game states
     GameState.registerEvents({ 'draw', 'update', 'quit', 'keypressed', 'mousepressed', 'resize' })
-    GameState.switch(GAME_STATES.dungeonPlanner)
+    GameState.switch(GAME_STATES.title)
 end
 
 local time = 0
