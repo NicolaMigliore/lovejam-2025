@@ -310,8 +310,14 @@ end
 
 function DungeonPlanner:addPartyMember(class)
     local pm = PartyMember(class)
-    table.insert(self.party, pm)
-    world:registerEntity(pm)
+    if pm.cost <= self.inventory.gold then
+        self.inventory.gold = self.inventory.gold - pm.cost
+        table.insert(self.party, pm)
+        world:registerEntity(pm)
+    else
+        -- TODO: give player feedback SFX, text color
+    end
+
 
 end
 
