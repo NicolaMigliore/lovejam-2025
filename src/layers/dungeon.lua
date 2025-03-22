@@ -1,9 +1,9 @@
 local Dungeon = Object:extend()
 
-local pW, pH = 20, 2
+local pW, pH = 40, 2
 local lW, lH = 15, 1
 
-function Dungeon:new(dungeonEvents, questPercentage, targetFloor, currentFloor, events)
+function Dungeon:new(dungeonEvents, questPercentage, targetFloor, currentFloor, party, events)
     self.layerName = 'dungeon'
 
     local gridCellSize = Luis.getGridSize()
@@ -15,8 +15,10 @@ function Dungeon:new(dungeonEvents, questPercentage, targetFloor, currentFloor, 
     self.questPercentage = questPercentage
     self.targetFloor = targetFloor
     self.currentFloor = currentFloor
+    self.party = party
 
     self.floorItems = {}
+    self.partyItems = {}
     self.questPercentageItem = nil
     self:createLayer()
 
@@ -27,9 +29,16 @@ function Dungeon:createLayer()
 
 
     -- ProgressBar
-    local offsetRow, offsetCol = self.gridMaxRow / 2, self.gridMaxCol / 2 - pW / 2
+    local offsetRow, offsetCol = self.gridMaxRow / 2 + pH + 2, self.gridMaxCol / 2 - pW / 2
     local p_quest = Luis.createElement(self.layerName, 'ProgressBar', self.questPercentage, pW, pH, offsetRow, offsetCol)
     self.questPercentageItem = p_quest
+
+    -- Party icons
+    local maxPartySize = 4
+    for index = 1, maxPartySize, 1 do
+        local offsetCol = index - 2
+        table.insert(self.partyItems, { ia_avatar = nil, offsetCol = offsetCol})
+    end
 
     -- Dungeon Events
     offsetRow, offsetCol = self.gridMaxRow / 2 - pH - 2, self.gridMaxCol / 2 - lW / 2
@@ -47,15 +56,45 @@ function Dungeon:createLayer()
     end
 end
 
-function Dungeon:update(dt, dungeonEvents, questPercentage, targetFloor, currentFloor)
+function Dungeon:update(dt, dungeonEvents, questPercentage, targetFloor, currentFloor, party)
     -- update props
     self.dungeonEvents = dungeonEvents
     self.questPercentage = questPercentage
     self.targetFloor = targetFloor
     self.currentFloor = currentFloor
+    self.party = party
 
     -- update progress bar
     self.questPercentageItem:setValue(self.questPercentage)
+
+    -- update Party icons
+    local maxPartySize = 4
+    local row, col = self.gridMaxRow / 2 + pH , self.gridMaxCol / 2 - pW / 2
+    for index = 1, maxPartySize, 1 do
+        local member = self.party[index]
+        local item = self.partyItems[index]
+        local baseCol = self.gridMaxCol / 2 - pW / 2
+        col = baseCol + item.offsetCol + (pW-1) * self.questPercentage
+
+        if item then
+            if member then
+                    local animation = member.animationController.animations.idle
+                if item.ia_avatar then
+                    item.ia_avatar:setAnimation(animation)
+                    item.ia_avatar:setPosition(row, col)
+                else
+                    -- create missing icon
+                    local ia_avatar = Luis.createElement(self.layerName, 'IconAnimated', member.animationController.image, animation, 2, row, col, nil)
+                    item.ia_avatar = ia_avatar
+                end
+            else
+                if item.ia_avatar then
+                    Luis.removeElement(self.layerName, item.ia_avatar)
+                    item.ia_avatar = nil
+                end
+            end
+        end
+    end
 
     -- update computed labels
     self:setFloorLabels()

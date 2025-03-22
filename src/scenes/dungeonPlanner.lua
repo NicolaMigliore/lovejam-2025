@@ -108,7 +108,7 @@ function DungeonPlanner:update(dt)
             self:setModeRecap()
         end
 
-        self.layers.dungeon:update(dt, self.events, self.quest, self.targetFloor, self.currentFloor)
+        self.layers.dungeon:update(dt, self.events, self.quest, self.targetFloor, self.currentFloor, self.party)
 
         -- run floors
         local currentIndex = math.floor(self.targetFloor * self.quest) + 1 --self.currentFloor

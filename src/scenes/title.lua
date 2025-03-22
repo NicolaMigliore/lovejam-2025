@@ -57,7 +57,7 @@ function Title:generateMainMenu()
     local bW, bH = 9, 2
     offsetRow = offsetRow + 5
     offsetCol = (cW / 2 - bW / 2) + 1
-    local b_add_member = Luis.newButton('NewGame', bW, bH, function()
+    local b_add_member = Luis.newButton('New Game', bW, bH, function()
         GameState.switch(GAME_STATES.dungeonPlanner)
         Luis.disableLayer(layerName)
     end, nil, offsetRow, offsetCol)

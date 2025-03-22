@@ -53,6 +53,13 @@ function icon.new(iconPath, animation, size, row, col, customTheme)
         setAnimation = function(self, newAnimation)
             self.animation = newAnimation
         end,
+
+        getPosition = function(self)
+            return self.position.x, self.position.y
+        end,
+        setPosition = function(self, r, c)
+            self.position = Vector2D.new((c - 1) * luis.gridSize, (r - 1) * luis.gridSize)
+        end,
     }
 end
 
