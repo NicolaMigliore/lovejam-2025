@@ -111,7 +111,7 @@ function Recap:setRecapLabels()
         for index, recapItem in ipairs(self.eventRecapItems) do
             if index > #self.eventRecap then
                 local label = recapItem.label
-                Luis.removeElement(self.layerName, label)
+                self.containers.c_recap:removeChild(label)
                 table.remove(self.eventRecapItems, index)
             end
         end
