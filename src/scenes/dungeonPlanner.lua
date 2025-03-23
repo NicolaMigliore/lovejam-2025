@@ -16,8 +16,12 @@ local DungeonPlanner = {
     sfx = {}
 }
 
+local maxFloor = 10
 local partyClasses = { 'rogue', 'mage', 'warrior', 'archer' }
-
+local cost = {
+    food = 2,
+    potion = 5
+}
 
 function DungeonPlanner:enter()
     -- load images
@@ -39,16 +43,17 @@ function DungeonPlanner:enter()
     self.nextPartyClass = 'rogue'
     self.inventory = {
         food = 0,
-        gold = 50,
-        potions = 1,
+        gold = 10,
+        potions = 0,
     }
 
-    self.targetFloor = 2
+    self.targetFloor = 1
     self.currentFloor = 0
     self.events = {}
     self.executedEvents = {}
     self.recap = {}
-
+    
+    self.days = 0
     self.quest = 0
 
     self.mode = 'plan'
@@ -57,14 +62,14 @@ function DungeonPlanner:enter()
     self.layers.plan = Plan(self.party, self.inventory, self.targetFloor, {
         clickFoodMinus = function()
             if self.inventory.food > 0 then
-                self.inventory.gold = self.inventory.gold + 2
+                self.inventory.gold = self.inventory.gold + cost.food
                 self.inventory.food = self.inventory.food - 1
             end
             self.sfx.click:play()
         end,
         clickFoodPlus = function()
             if self.inventory.gold > 1 then
-                self.inventory.gold = self.inventory.gold - 2
+                self.inventory.gold = self.inventory.gold - cost.food
                 self.inventory.food = self.inventory.food + 1
             end
             self.sfx.click:play()
@@ -76,21 +81,21 @@ function DungeonPlanner:enter()
             self.sfx.click:play()
         end,
         clickFloorPlus = function()
-            if self.targetFloor < 10 then
+            if self.targetFloor < maxFloor then
                 self.targetFloor = self.targetFloor + 1
             end
             self.sfx.click:play()
         end,
         clickPotionsMinus = function()
             if self.inventory.potions > 0 then
-                self.inventory.gold = self.inventory.gold + 5
+                self.inventory.gold = self.inventory.gold + cost.potion
                 self.inventory.potions = self.inventory.potions - 1
             end
             self.sfx.click:play()
         end,
         clickPotionsPlus = function()
             if self.inventory.gold > 4 then
-                self.inventory.gold = self.inventory.gold - 5
+                self.inventory.gold = self.inventory.gold - cost.potion
                 self.inventory.potions = self.inventory.potions + 1
             end
             self.sfx.click:play()
@@ -98,6 +103,7 @@ function DungeonPlanner:enter()
         clickConfirm = function()
             if #self.party > 0 then
                 self:setModeDungeon()
+                self.days = self.days + 1
             end
             self.sfx.click:play()
         end,
@@ -162,6 +168,11 @@ function DungeonPlanner:update(dt)
                     -- Execute events
                     if Lume.find({ 'inventory_loose', 'inventory_gain' }, evt.type) then
                         self.inventory[evt.targetAttribute] = self.inventory[evt.targetAttribute] + evt.modifier
+                        -- workaround to prevent negative inventory items
+                        if self.inventory[evt.targetAttribute] < 0 then
+                            self.inventory[evt.targetAttribute] = 0
+                        end
+
                         local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' .. evt.label
                         if evt.modifier > 0 then
                             evtRecapMsg = evtRecapMsg .. ' +' .. evt.modifier
@@ -252,6 +263,8 @@ function DungeonPlanner:update(dt)
 end
 
 function DungeonPlanner:draw()
+    love.graphics.setColor(1,1,1,1)
+
     if self.mode == 'plan' then
         -- draw environment
         local imgW, imgH = self.images.tavern:getWidth(), self.images.tavern:getHeight()
@@ -275,6 +288,7 @@ function DungeonPlanner:draw()
     -- draw UI
     Luis.draw()
     -- DEBUG
+    love.graphics.print('Days '..self.days, 20, 600)
 end
 
 function DungeonPlanner:leave()
@@ -302,14 +316,28 @@ function DungeonPlanner:generateEvents()
     self.events = {}
     local eventTypes = { 'inventory_loose', 'inventory_gain', 'trap_single', 'trap_all' }
 
+    local floorEventWeights = {
+        inventory_loose = function(x) return x end, -- linear
+        inventory_gain = function(x) return 1 - (1 - x) * (1 - x) end, -- easeOutQuad
+        trap_single = function(x) return x * x end, -- easeInQuad
+        trap_all = function(x) return x * x * x * x * x end, -- easeInQuint
+    }
+
     for floor = 1, self.targetFloor do
-        local floorModifier = math.max(1, math.floor(floor / 5))
-        local evtType = Lume.randomchoice(eventTypes)
+        local dungeonPercentage = floor/maxFloor
+        local floorModifier = math.max(1, math.floor(floor / 2))
+        local choices = {
+            inventory_loose = floorEventWeights.inventory_loose(dungeonPercentage) * 2,
+            inventory_gain = floorEventWeights.inventory_gain(dungeonPercentage) * 4,
+            trap_single = floorEventWeights.trap_single(dungeonPercentage) * 3,
+            trap_all = floorEventWeights.trap_all(dungeonPercentage) * 5,
+        }
+        local evtType = Lume.weightedchoice(choices)
+
         -- Inventory Loose events
         if evtType == 'inventory_loose' then
-            local baseAmount = 3
-            local amount = love.math.random(baseAmount) * -1
-            amount = amount * floorModifier -- scale based on floor
+            local amount = Utils:easeInOutQuad(dungeonPercentage) * 5 + love.math.random(3)
+            amount = math.floor(amount) * -1
 
             local evtKinds = {
                 { code = 'loose_gold', label = 'Lost Gold', targetAttribute = 'gold' },
@@ -319,9 +347,8 @@ function DungeonPlanner:generateEvents()
             local evt = Event(evtType, evtKind.code, evtKind.label, nil, 'inventory', evtKind.targetAttribute, amount)
             table.insert(self.events, floor, evt)
         elseif evtType == 'inventory_gain' then
-            local baseAmount = 2
-            local amount = love.math.random(baseAmount)
-            amount = amount * floorModifier -- scale based on floor
+            local amount = Utils:easeInOutQuad(dungeonPercentage) * 20 + love.math.random(3)
+            amount = math.floor(amount)
 
             local evtKinds = {
                 { code = 'find_gold', label = 'Found Gold', targetAttribute = 'gold' },

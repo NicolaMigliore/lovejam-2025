@@ -60,7 +60,7 @@ function Title:generateMainMenu()
     -- buttons
     local bW, bH = 9, 2
     offsetRow = offsetRow + 5
-    offsetCol = (cW / 2 - bW / 2) + 1
+    offsetCol = (cW / 2 - bW / 2) + 2
     local b_add_member = Luis.newButton('New Game', bW, bH, function() GameState.switch(GAME_STATES.dungeonPlanner) end,
     nil, offsetRow, offsetCol)
     c_mainMenu:addChild(b_add_member, offsetRow, offsetCol)

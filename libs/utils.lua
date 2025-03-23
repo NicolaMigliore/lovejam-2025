@@ -111,4 +111,13 @@ function Utils:round(num, numDecimalPlaces)
     return math.floor(num * mult + 0.5) / mult
 end
 
+--- https://easings.net/#easeInOutQuad
+function Utils:easeInOutQuad(x)
+    if x < 0.5 then
+        return 2 * x * x
+    else
+        return 1 - (-2 * x + 2)^2 / 2
+    end
+end
+
 return Utils
