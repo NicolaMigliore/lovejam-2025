@@ -17,9 +17,8 @@ local DungeonPlanner = {
 }
 
 local maxFloor = 10
-local partyClasses = { 'rogue', 'mage', 'warrior', 'archer' }
 local cost = {
-    food = 2,
+    food = 1,
     potion = 5
 }
 
@@ -36,6 +35,8 @@ function DungeonPlanner:enter()
     -- load sfx
     self.sfx.click = love.audio.newSource('assets/sounds/click.wav', 'static')
 
+    -- reset world
+    world = ECSWorld()
     self.systems.graphics = GraphicsSystem()
     world:registerSystem(self.systems.graphics)
 
@@ -52,14 +53,14 @@ function DungeonPlanner:enter()
     self.events = {}
     self.executedEvents = {}
     self.recap = {}
-    
+
     self.days = 0
     self.quest = 0
 
     self.mode = 'plan'
 
     -- create layers
-    self.layers.plan = Plan(self.party, self.inventory, self.targetFloor, {
+    self.layers.plan = Plan(self.party, self.inventory, self.targetFloor, self.days, {
         clickFoodMinus = function()
             if self.inventory.food > 0 then
                 self.inventory.gold = self.inventory.gold + cost.food
@@ -112,18 +113,34 @@ function DungeonPlanner:enter()
             self.sfx.click:play()
         end,
         clickAddPartyMember = function()
-            self:addPartyMember(self.nextPartyClass)
-            self.sfx.click:play()
+            if #self.party < 4 then
+                self:addPartyMember(self.nextPartyClass)
+                self.sfx.click:play()
+            end
+        end,
+        clickRemovePartyMember = function(index)
+            local member = self.party[index]
+            if member then
+                self.inventory.gold = self.inventory.gold + member.cost
+                world:unregisterEntity(member.id)
+                table.remove(self.party, index)
+                self.sfx.click:play()
+            end
         end
     })
     self.layers.dungeon = Dungeon(self.events, self.quest, self.targetFloor, self.currentFloor, {})
     self.layers.recap = Recap(self.recap, false, {
         clickContinue = function()
-            self:setModePlan()
+            local hasWon = self.targetFloor == maxFloor and #self.party > 0
+            if hasWon then
+                GameState.switch(GAME_STATES.winScreen, self.days)
+            else
+                self:setModePlan()
+            end
             self.sfx.click:play()
         end,
         clickExit = function()
-            GameState.switch(GAME_STATES.title)
+            GameState.self.music.dungeon(GAME_STATES.title)
             self.sfx.click:play()
         end,
     })
@@ -133,9 +150,18 @@ end
 
 function DungeonPlanner:update(dt)
     world:update(dt)
+
+    -- update entity position
+    for index, member in ipairs(self.party) do
+        local x = 200 + index * (member.size.w / 2 + 50)
+        local y = 245 + index * 10 -- simulate basic z-sorting
+        member.body.position.x = x
+        member.body.position.y = y
+    end
+
     love.graphics.setBackgroundColor(.30, .48, .65)
     if self.mode == 'plan' then
-        self.layers.plan:update(dt, self.party, self.inventory, self.targetFloor)
+        self.layers.plan:update(dt, self.party, self.inventory, self.targetFloor, self.days)
 
         -- play music
         if GAME_SETTINGS.playMusic and not self.music.tavern:isPlaying() then
@@ -244,7 +270,7 @@ function DungeonPlanner:update(dt)
                     self.inventory.potions = self.inventory.potions - 1
                     member.hp = member.hp + 1
                     local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' ..
-                    member.name .. ' healed 1 damage using potion'
+                        member.name .. ' healed 1 damage using potion'
                     table.insert(self.recap, evtRecapMsg)
                 end
             end
@@ -263,7 +289,7 @@ function DungeonPlanner:update(dt)
 end
 
 function DungeonPlanner:draw()
-    love.graphics.setColor(1,1,1,1)
+    love.graphics.setColor(1, 1, 1, 1)
 
     if self.mode == 'plan' then
         -- draw environment
@@ -282,19 +308,21 @@ function DungeonPlanner:draw()
         local imgW, imgH = self.images.dungeon:getWidth(), self.images.dungeon:getHeight()
         local scaleX, scaleY = GAME_SETTINGS.baseWidth / imgW, GAME_SETTINGS.baseHeight / imgH
         love.graphics.draw(self.images.dungeon, 0, 0, 0, scaleX, scaleY)
-
     end
 
     -- draw UI
     Luis.draw()
     -- DEBUG
-    love.graphics.print('Days '..self.days, 20, 600)
+
 end
 
 function DungeonPlanner:leave()
     Luis.removeLayer(self.layers.plan.layerName)
     Luis.removeLayer(self.layers.dungeon.layerName)
     Luis.removeLayer(self.layers.recap.layerName)
+
+    self.music.tavern:stop()
+    self.music.dungeon:stop()
 end
 
 function DungeonPlanner:keypressed(key, code, isRepeat)
@@ -317,14 +345,14 @@ function DungeonPlanner:generateEvents()
     local eventTypes = { 'inventory_loose', 'inventory_gain', 'trap_single', 'trap_all' }
 
     local floorEventWeights = {
-        inventory_loose = function(x) return x end, -- linear
+        inventory_loose = function(x) return x end,                    -- linear
         inventory_gain = function(x) return 1 - (1 - x) * (1 - x) end, -- easeOutQuad
-        trap_single = function(x) return x * x end, -- easeInQuad
-        trap_all = function(x) return x * x * x * x * x end, -- easeInQuint
+        trap_single = function(x) return x * x end,                    -- easeInQuad
+        trap_all = function(x) return x * x * x * x * x end,           -- easeInQuint
     }
 
     for floor = 1, self.targetFloor do
-        local dungeonPercentage = floor/maxFloor
+        local dungeonPercentage = floor / maxFloor
         local floorModifier = math.max(1, math.floor(floor / 2))
         local choices = {
             inventory_loose = floorEventWeights.inventory_loose(dungeonPercentage) * 2,
@@ -432,10 +460,7 @@ function DungeonPlanner:setModeRecap()
 end
 
 function DungeonPlanner:addPartyMember(class)
-    local x, y = 100 + love.math.random(600), 187
-    y = y + #self.party * 4 -- simulate basic z-sorting
-
-    local pm = PartyMember(class, x, y)
+    local pm = PartyMember(class, 0, 0)
     if pm.cost <= self.inventory.gold then
         self.inventory.gold = self.inventory.gold - pm.cost
         table.insert(self.party, pm)

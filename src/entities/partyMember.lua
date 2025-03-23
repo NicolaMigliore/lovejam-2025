@@ -8,9 +8,9 @@ local PartyMember = Entity:extend()
 local idleSpritesFile = 'assets/party-idle.png'
 local classes = {
     rogue = { race = 'goblin', maxHp = 5, hp = 5, dmg = 4, hunger = 1, cost = 4, idleFramesRow = 1 },
-    warrior = { race = 'orc', maxHp = 10, hp = 10, dmg = 4, hunger = 5, cost = 10, idleFramesRow = 2 },
-    mage = { race = 'elf', maxHp = 10, hp = 10, dmg = 4, hunger = 3, cost = 8, idleFramesRow = 3 },
     archer = { race = 'human', maxHp = 10, hp = 10, dmg = 4, hunger = 3, cost = 6, idleFramesRow = 4 },
+    mage = { race = 'elf', maxHp = 10, hp = 10, dmg = 4, hunger = 3, cost = 8, idleFramesRow = 3 },
+    warrior = { race = 'orc', maxHp = 10, hp = 10, dmg = 4, hunger = 5, cost = 10, idleFramesRow = 2 },
 }
 local names = {
     rogue = { 'Snarl', 'Kalp', 'Rangr', 'Trisp', 'Limr', 'Skraak'},

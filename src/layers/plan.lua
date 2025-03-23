@@ -2,9 +2,10 @@ local Plan = Object:extend()
 
 local IconsImage = love.graphics.newImage('assets/icons.png')
 IconsImage:setFilter('nearest', 'nearest')
-local partyClasses = { 'rogue', 'mage', 'warrior', 'archer' }
+local partyClasses = { 'rogue', 'archer', 'mage', 'warrior' }
+local partyClassLabels = { 'rogue (F:1, C:4)', 'archer (F:3, C:6)', 'mage (F:4, C:6)', 'warrior (F:5, C:10)'}
 
-function Plan:new(party, inventory, targetFloor, events)
+function Plan:new(party, inventory, targetFloor, days, events)
     self.layerName = 'plan'
     self.containers = {}
 
@@ -16,6 +17,7 @@ function Plan:new(party, inventory, targetFloor, events)
     self.party = party
     self.inventory = inventory
     self.targetFloor = targetFloor
+    self.days = days
 
     self.maxPartySize = 4
     self.partyItems = {}
@@ -30,8 +32,9 @@ function Plan:new(party, inventory, targetFloor, events)
         clickPotionsMinus = function() end,
         clickPotionsPlus = function() end,
         clickConfirm = function() end,
-        nextPartyMemberChange = function() end,
+        nextPartyMemberChange = function(newClass) end,
         clickAddPartyMember = function() end,
+        clickRemovePartyMember = function() end,
     }
     self.events = Lume.merge(self.events, events)
 
@@ -41,7 +44,7 @@ function Plan:createLayer()
     Luis.newLayer(self.layerName)
 
     local offsetRow, offsetCol = 2, 2
-    local cW, cH = 11, 19
+    local cW, cH = 13, 19
     local borderImage = love.graphics.newImage('assets/ui.png')
     local c_party = Luis.createElement(self.layerName, 'FlexContainer2', cW, cH, offsetRow, offsetCol, nil, 'partyContainer')
     c_party:setDecorator("Slice9Decorator", borderImage, 6, 6, 6, 6)
@@ -64,6 +67,10 @@ function Plan:createLayer()
         end
         local l_name = Luis.newLabel(text, lW, lH, offsetRow, offsetCol, 'left', GAME_SETTINGS.labelTheme)
         c_party:addChild(l_name, offsetRow, offsetCol)
+
+        -- Remove button
+        local b_remove = Luis.newButton('-', 2, 2, function() self.events.clickRemovePartyMember(index) end, nil, offsetRow, 11)
+        c_party:addChild(b_remove, offsetRow, 11)
         offsetRow = offsetRow + lH
 
         -- Stats
@@ -77,21 +84,23 @@ function Plan:createLayer()
         -- Equipment
 
         -- save item
-        table.insert(self.partyItems, { l_name = l_name, l_stats = l_stats, ia_avatar = ia_avatar })
+        table.insert(self.partyItems, { l_name = l_name, l_stats = l_stats, ia_avatar = nil, b_remove = b_remove })
     end
 
     -- Add party member
     offsetCol = 2
     offsetRow = offsetRow + 1
-    local ddW, ddH = 9, 2
-    local dd_nextClass = Luis.createElement(self.layerName, 'DropDown', partyClasses, nil, ddW, ddH,function(val) self.events.nextPartyMemberChange(val) end, offsetRow, offsetCol, 4)
+    local ddW, ddH = 11, 2
+    local dd_nextClass = Luis.createElement(self.layerName, 'DropDown', partyClassLabels, nil, ddW, ddH, function(val)
+        local index = Lume.find(partyClassLabels, val)
+        local newClass = partyClasses[index]
+        self.events.nextPartyMemberChange(newClass) end
+    , offsetRow, offsetCol, 4)
     -- local dd_nextClass = Luis.newDropDown(partyClasses, nil, ddW, ddH,function(val) self.events.nextPartyMemberChange(val) end, offsetRow, offsetCol, 2)
     c_party:addChild(dd_nextClass, offsetRow, offsetCol)
 
     offsetRow = offsetRow + ddH + 1
-    -- offsetCol = offsetCol + ddW + 1
-    local b_add_member = Luis.createElement(self.layerName, 'Button', 'Add Member', 9, 2, function() self.events.clickAddPartyMember() end, nil, offsetRow, offsetCol)
-    -- local b_add_member = Luis.newButton('Add', 3, 2, function() self.events.clickAddPartyMember() end, nil, offsetRow, offsetCol)
+    local b_add_member = Luis.createElement(self.layerName, 'Button', 'Add Member', 11, 2, function() self.events.clickAddPartyMember() end, nil, offsetRow, offsetCol)
     c_party:addChild(b_add_member, offsetRow, offsetCol)
 
 
@@ -99,11 +108,22 @@ function Plan:createLayer()
     offsetRow = 2
     lW, lH = 4, 2
 
-    cW, cH = 14, 13
+    cW, cH = 14, 16
     offsetCol = self.gridMaxCol -8 - lW - iS
     local c_inventory = Luis.createElement(self.layerName, 'FlexContainer2', cW, cH, offsetRow, offsetCol, nil, 'inventoryContainer')
     c_inventory:setDecorator("Slice9Decorator", borderImage, 6, 6, 6, 6)
     self.containers.c_inventory = c_inventory
+
+    -- Days
+    offsetCol = 5
+    local days_quad = love.graphics.newQuad(64, 0, 16, 16, IconsImage:getWidth(), IconsImage:getHeight())
+    local i_days = Luis.createElement(self.layerName, 'Icon', IconsImage, iS, offsetRow, offsetCol, nil, days_quad)
+    c_inventory:addChild(i_days, offsetRow, offsetCol)
+    offsetCol = offsetCol + iS
+    local text = 'days: ' .. tostring(self.days)
+    local l_days = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow, offsetCol, 'left', GAME_SETTINGS.labelTheme)
+    c_inventory:addChild(l_days, offsetRow, offsetCol)
+    offsetRow = offsetRow + 3
 
     -- Gold
     offsetCol = 5
@@ -192,6 +212,7 @@ function Plan:createLayer()
     offsetRow = offsetRow + 2
 
     -- save
+    self.inventoryItems.days = { label = l_days}
     self.inventoryItems.gold = { label = l_gold }
     self.inventoryItems.food = { b_minus = b_food_minus, label = l_food, b_plus = b_food_plus }
     self.inventoryItems.potions = { b_minus = b_food_minus, label = l_potions, b_plus = b_food_plus }
@@ -206,21 +227,22 @@ function Plan:createLayer()
         offsetCol)
 end
 
-function Plan:update(dt, party, inventory, targetFloor)
+function Plan:update(dt, party, inventory, targetFloor, days)
     -- update props
     self.party = party
     self.inventory = inventory
     self.targetFloor = targetFloor
-
+    self.days = days
+    
     -- update computed labels
     for index = 1, self.maxPartySize, 1 do
         local member = self.party[index]
         local item = self.partyItems[index]
         if item then
             if member then
-                -- item.l_name:setText(member.race .. ' ' .. member.class)
                 item.l_name:setText(member.class .. ' ' .. member.name)
                 item.l_stats:setText('HP: ' .. Utils:round(member.hp, 2) .. '   DMG: ' .. member.dmg)
+
                 -- create missing icon
                 local animation = member.animationController.animations.idle
                 if item.ia_avatar then
@@ -242,6 +264,7 @@ function Plan:update(dt, party, inventory, targetFloor)
     end
 
     -- update inventory labels
+    self.inventoryItems.days.label:setText('Days: ' .. tostring(self.days))
     self.inventoryItems.gold.label:setText('Gold: ' .. tostring(self.inventory.gold))
     self.inventoryItems.food.label:setText('Food: ' .. tostring(self.inventory.food))
     self.inventoryItems.potions.label:setText('Potions: ' .. tostring(self.inventory.potions))

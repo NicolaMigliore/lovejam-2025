@@ -27,7 +27,8 @@ Luis.flux = require("luis.3rdparty.flux")
 GAME_STATES = {
     title = require 'src.scenes.title',
     dungeonPlanner = require 'src.scenes.dungeonPlanner',
-    level1 = require 'src.scenes.level-1'
+    winScreen = require 'src.scenes.winScreen',
+    level1 = require 'src.scenes.level-1',
 }
 
 GAME_SETTINGS = {

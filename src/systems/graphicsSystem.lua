@@ -7,7 +7,8 @@ function Graphics:new(map)
     -- local terrainLayer = map:getLayer('terrain')
     -- local boundL, boundT, boundR, boundB = terrainLayer:getPixelBounds()
 
-    local cameraBoundW, cameraBoundH = 800, 600
+    -- local cameraBoundW, cameraBoundH = 800, 600
+    local cameraBoundW, cameraBoundH = GAME_SETTINGS.baseWidth, GAME_SETTINGS.baseHeight
     -- cameraBoundW, cameraBoundH = boundR, boundB
 
     self.camera = Gamera.new(0, 0, cameraBoundW, cameraBoundH)
