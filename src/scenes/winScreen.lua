@@ -1,14 +1,16 @@
 
 local WinScreen = {
-    layers = {}
+    layers = {},
+    sfx = {}
 }
 
 function WinScreen:enter(current, days)
-    print('check', days)
     self.days = days
 
     self.layers.mainLayer = self:generateMainLayer()
     self.layers.mainLayer:showLayer()
+
+    self.sfx.click = love.audio.newSource('assets/sounds/click.wav', 'static')
 end
 
 function WinScreen:update(dt)
@@ -67,7 +69,7 @@ function WinScreen:generateMainLayer()
     -- buttons
     local bW, bH = 9, 2
     offsetRow, offsetCol = cH - 4, cW / 2 - bW / 2 + 2
-    local b_add_member = Luis.newButton('Back to Title', bW, bH, function() GameState.switch(GAME_STATES.title) end,
+    local b_add_member = Luis.newButton('Back to Title', bW, bH, function() GameState.switch(GAME_STATES.title) self.sfx.click:play() end,
     nil, offsetRow, offsetCol)
     mainLayer:addChild(b_add_member, offsetRow, offsetCol)
 

@@ -31,9 +31,18 @@ function DungeonPlanner:enter()
     -- load music
     self.music.tavern = love.audio.newSource('assets/music/The Daily Brew Tavern (LOOP).wav', 'stream')
     self.music.dungeon = love.audio.newSource('assets/music/Lost.mp3', 'stream')
+    self.music.chatter = love.audio.newSource('assets/music/695295__brunoboselli__pirate-tavern.wav', 'stream')
 
     -- load sfx
     self.sfx.click = love.audio.newSource('assets/sounds/click.wav', 'static')
+    self.sfx.drip = love.audio.newSource('assets/sounds/water-drop-night-horror-effects-304065.mp3', 'static')
+    self.sfx.noGold = love.audio.newSource('assets/sounds/Fantasy_UI (8).wav', 'static')
+
+    self.sfx.effortGoblin = love.audio.newSource('assets/sounds/11. Effort Grunt (Male).wav', 'static')
+    self.sfx.effortHuman = love.audio.newSource('assets/sounds/05. Effort Grunt (Male).wav', 'static')
+    self.sfx.effortElf = love.audio.newSource('assets/sounds/09. Effort Grunt (Male).wav', 'static')
+    self.sfx.effortOrc = love.audio.newSource('assets/sounds/13. Effort Grunt (Male).wav', 'static')
+    self.sfx.death = love.audio.newSource('assets/sounds/34. Effort Grunt (Male).wav', 'static')
 
     -- reset world
     world = ECSWorld()
@@ -65,48 +74,62 @@ function DungeonPlanner:enter()
             if self.inventory.food > 0 then
                 self.inventory.gold = self.inventory.gold + cost.food
                 self.inventory.food = self.inventory.food - 1
+                self.sfx.click:play()
+            else
+                self.sfx.noGold:play()
             end
-            self.sfx.click:play()
         end,
         clickFoodPlus = function()
             if self.inventory.gold > 1 then
                 self.inventory.gold = self.inventory.gold - cost.food
                 self.inventory.food = self.inventory.food + 1
+                self.sfx.click:play()
+            else
+                self.sfx.noGold:play()
             end
-            self.sfx.click:play()
         end,
         clickFloorMinus = function()
             if self.targetFloor > 1 then
                 self.targetFloor = self.targetFloor - 1
+                self.sfx.click:play()
+            else
+                self.sfx.noGold:play()
             end
-            self.sfx.click:play()
         end,
         clickFloorPlus = function()
             if self.targetFloor < maxFloor then
                 self.targetFloor = self.targetFloor + 1
+                self.sfx.click:play()
+            else
+                self.sfx.noGold:play()
             end
-            self.sfx.click:play()
         end,
         clickPotionsMinus = function()
             if self.inventory.potions > 0 then
                 self.inventory.gold = self.inventory.gold + cost.potion
                 self.inventory.potions = self.inventory.potions - 1
+                self.sfx.click:play()
+            else
+                self.sfx.noGold:play()
             end
-            self.sfx.click:play()
         end,
         clickPotionsPlus = function()
             if self.inventory.gold > 4 then
                 self.inventory.gold = self.inventory.gold - cost.potion
                 self.inventory.potions = self.inventory.potions + 1
+                self.sfx.click:play()
+            else
+                self.sfx.noGold:play()
             end
-            self.sfx.click:play()
         end,
         clickConfirm = function()
             if #self.party > 0 then
                 self:setModeDungeon()
                 self.days = self.days + 1
+                self.sfx.click:play()
+            else
+                self.sfx.noGold:play()
             end
-            self.sfx.click:play()
         end,
         nextPartyMemberChange = function(val)
             self.nextPartyClass = val
@@ -115,7 +138,6 @@ function DungeonPlanner:enter()
         clickAddPartyMember = function()
             if #self.party < 4 then
                 self:addPartyMember(self.nextPartyClass)
-                self.sfx.click:play()
             end
         end,
         clickRemovePartyMember = function(index)
@@ -125,6 +147,8 @@ function DungeonPlanner:enter()
                 world:unregisterEntity(member.id)
                 table.remove(self.party, index)
                 self.sfx.click:play()
+            else
+                self.sfx.noGold:play()
             end
         end
     })
@@ -140,7 +164,7 @@ function DungeonPlanner:enter()
             self.sfx.click:play()
         end,
         clickExit = function()
-            GameState.self.music.dungeon(GAME_STATES.title)
+            GameState.switch(GAME_STATES.title)
             self.sfx.click:play()
         end,
     })
@@ -166,6 +190,9 @@ function DungeonPlanner:update(dt)
         -- play music
         if GAME_SETTINGS.playMusic and not self.music.tavern:isPlaying() then
             self.music.tavern:play()
+        end
+        if GAME_SETTINGS.playMusic and not self.music.chatter:isPlaying() then
+            self.music.chatter:play()
         end
     elseif self.mode == 'dungeon' then
         -- transition to Plan
@@ -218,6 +245,7 @@ function DungeonPlanner:update(dt)
                             -- Kill party member
                             world:unregisterEntity(randomMember.id)
                             table.remove(self.party, randomIndex)
+                            self.sfx.death:play()
                             local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' .. randomMember.name .. ' died'
                             table.insert(self.recap, evtRecapMsg)
                         end
@@ -230,6 +258,7 @@ function DungeonPlanner:update(dt)
                             if member.hp <= 0 then
                                 world:unregisterEntity(member.id)
                                 table.remove(self.party, index)
+                                self.sfx.death:play()
                                 local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' .. member.name .. ' died'
                                 table.insert(self.recap, evtRecapMsg)
                             end
@@ -255,6 +284,7 @@ function DungeonPlanner:update(dt)
                         if member.hp <= 0 then
                             world:unregisterEntity(member.id)
                             table.remove(self.party, index)
+                            self.sfx.death:play()
                             local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' .. member.name .. ' died'
                             table.insert(self.recap, evtRecapMsg)
                         end
@@ -323,6 +353,7 @@ function DungeonPlanner:leave()
 
     self.music.tavern:stop()
     self.music.dungeon:stop()
+    self.sfx.drip:stop()
 end
 
 function DungeonPlanner:keypressed(key, code, isRepeat)
@@ -430,9 +461,11 @@ function DungeonPlanner:setModeDungeon()
 
     -- play music
     love.audio.stop(self.music.tavern)
+    love.audio.stop(self.music.chatter)
     if GAME_SETTINGS.playMusic and not self.music.dungeon:isPlaying() then
         self.music.dungeon:play()
     end
+    self.sfx.drip:play()
 end
 
 function DungeonPlanner:setModePlan()
@@ -447,6 +480,7 @@ function DungeonPlanner:setModePlan()
 
     -- play music
     love.audio.stop(self.music.dungeon)
+    love.audio.stop(self.sfx.drip)
     if GAME_SETTINGS.playMusic and not self.music.tavern:isPlaying() then
         self.music.tavern:play()
     end
@@ -460,12 +494,22 @@ function DungeonPlanner:setModeRecap()
 end
 
 function DungeonPlanner:addPartyMember(class)
+    local classSounds = {
+        rogue = self.sfx.effortGoblin,
+        archer = self.sfx.effortHuman,
+        mage = self.sfx.effortElf,
+        warrior = self.sfx.effortOrc,
+    }
+
     local pm = PartyMember(class, 0, 0)
     if pm.cost <= self.inventory.gold then
         self.inventory.gold = self.inventory.gold - pm.cost
         table.insert(self.party, pm)
         world:registerEntity(pm)
+        self.sfx.click:play()
+        classSounds[class]:play()
     else
+        self.sfx.noGold:play()
         -- TODO: give player feedback SFX, text color
     end
 end
