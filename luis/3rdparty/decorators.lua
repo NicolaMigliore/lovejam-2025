@@ -65,6 +65,7 @@ function Slice9Decorator.new(widget, image, left, right, top, bottom)
 end
 
 function Slice9Decorator:draw(this)
+    love.graphics.setColor(1,1,1,1)
     local x, y = self.widget.position.x, self.widget.position.y
     local w, h = self.widget.width, self.widget.height
     local iw, ih = self.image:getDimensions()
@@ -99,8 +100,12 @@ function Slice9Decorator:draw(this)
 
     -- Draw text
     if this.value then
-        if this.theme.textColor then
-            love.graphics.setColor(this.theme.textColor)
+        local textThemeColor = this.theme.textColor
+        if this.type == 'Label' then
+            textThemeColor = this.theme.color
+        end
+        if textThemeColor then
+            love.graphics.setColor(textThemeColor)
         end
         local font_backup = love.graphics.getFont()
         love.graphics.printf(this.value, this.position.x, this.position.y + (this.height - font_backup:getHeight()) / 2,

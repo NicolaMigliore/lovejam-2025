@@ -53,9 +53,9 @@ function Title:generateMainMenu()
 
     local cW, cH = 18, 25
     local offsetRow, offsetCol = self.gridMaxRow / 2 - cH / 2, self.gridMaxCol / 2 - cW / 2
-    local borderImage = love.graphics.newImage('assets/ui.png')
+    local borderImage = love.graphics.newImage('assets/scroll.png')
     local c_mainMenu = Luis.createElement(layerName, 'FlexContainer2', cW, cH, offsetRow, offsetCol, nil, 'c_mainMenu')
-    c_mainMenu:setDecorator("Slice9Decorator", borderImage, 6, 6, 6, 6)
+    c_mainMenu:setDecorator("Slice9Decorator", borderImage, 48, 24, 28, 36)
 
     -- buttons
     local bW, bH = 9, 2

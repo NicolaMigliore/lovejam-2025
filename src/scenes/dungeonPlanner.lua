@@ -21,10 +21,11 @@ local partyClasses = { 'rogue', 'mage', 'warrior', 'archer' }
 
 function DungeonPlanner:enter()
     -- load images
-    self.images.tavern = love.graphics.newImage('assets/tavern.png') 
+    self.images.tavern = love.graphics.newImage('assets/tavern.png')
     self.images.table = love.graphics.newImage('assets/table.png')
+    self.images.dungeon = love.graphics.newImage('assets/dungeon.png')
 
-    -- load music    
+    -- load music
     self.music.tavern = love.audio.newSource('assets/music/The Daily Brew Tavern (LOOP).wav', 'stream')
     self.music.dungeon = love.audio.newSource('assets/music/Lost.mp3', 'stream')
 
@@ -142,6 +143,11 @@ function DungeonPlanner:update(dt)
 
         self.layers.dungeon:update(dt, self.events, self.quest, self.targetFloor, self.currentFloor, self.party)
 
+        -- play music
+        if GAME_SETTINGS.playMusic and not self.music.dungeon:isPlaying() then
+            self.music.dungeon:play()
+        end
+
         -- run floors
         local currentIndex = math.floor(self.targetFloor * self.quest) + 1 --self.currentFloor
         local runNextFloor = currentIndex > self.currentFloor and currentIndex <= self.targetFloor and #self.party > 0
@@ -168,22 +174,24 @@ function DungeonPlanner:update(dt)
                         local randomMember = self.party[randomIndex]
                         randomMember.hp = randomMember.hp + evt.modifier
                         local evtRecapMsg = 'Floor ' ..
-                        currentIndex .. ': ' .. evt.label .. ' ' .. randomMember.name ..
-                        ' took ' .. evt.modifier .. ' damage'
+                            currentIndex .. ': ' .. evt.label .. ' ' .. randomMember.name ..
+                            ' took ' .. evt.modifier .. ' damage'
                         table.insert(self.recap, evtRecapMsg)
                         if randomMember.hp <= 0 then
                             -- Kill party member
+                            world:unregisterEntity(randomMember.id)
                             table.remove(self.party, randomIndex)
                             local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' .. randomMember.name .. ' died'
                             table.insert(self.recap, evtRecapMsg)
                         end
                     elseif evt.type == 'trap_all' then
                         local evtRecapMsg = 'Floor ' ..
-                        currentIndex .. ': ' .. evt.label .. ' all party members took ' .. evt.modifier .. ' damage'
+                            currentIndex .. ': ' .. evt.label .. ' all party members took ' .. evt.modifier .. ' damage'
                         table.insert(self.recap, evtRecapMsg)
                         for index, member in ipairs(self.party) do
                             member.hp = member.hp + evt.modifier
                             if member.hp <= 0 then
+                                world:unregisterEntity(member.id)
                                 table.remove(self.party, index)
                                 local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' .. member.name .. ' died'
                                 table.insert(self.recap, evtRecapMsg)
@@ -205,9 +213,10 @@ function DungeonPlanner:update(dt)
                         self.inventory.food = 0
                         member.hp = member.hp - 1
                         local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' ..
-                        member.name .. ' took 1 damage from starving'
+                            member.name .. ' took 1 damage from starving'
                         table.insert(self.recap, evtRecapMsg)
                         if member.hp <= 0 then
+                            world:unregisterEntity(member.id)
                             table.remove(self.party, index)
                             local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' .. member.name .. ' died'
                             table.insert(self.recap, evtRecapMsg)
@@ -223,7 +232,8 @@ function DungeonPlanner:update(dt)
                 if member and member.hp < member.maxHp and self.inventory.potions > 0 then
                     self.inventory.potions = self.inventory.potions - 1
                     member.hp = member.hp + 1
-                    local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' ..member.name .. ' healed 1 damage using potion'
+                    local evtRecapMsg = 'Floor ' .. currentIndex .. ': ' ..
+                    member.name .. ' healed 1 damage using potion'
                     table.insert(self.recap, evtRecapMsg)
                 end
             end
@@ -231,8 +241,13 @@ function DungeonPlanner:update(dt)
             self.currentFloor = currentIndex
         end
     elseif self.mode == 'recap' then
-        local isGameOver = #self.party == 0 and self.inventory.gold < 4         -- 4 is the cost of a rogue
+        local isGameOver = #self.party == 0 and self.inventory.gold < 4 -- 4 is the cost of a rogue
         self.layers.recap:update(dt, self.recap, isGameOver)
+
+        -- play music
+        if GAME_SETTINGS.playMusic and not self.music.dungeon:isPlaying() then
+            self.music.dungeon:play()
+        end
     end
 end
 
@@ -242,17 +257,19 @@ function DungeonPlanner:draw()
         local imgW, imgH = self.images.tavern:getWidth(), self.images.tavern:getHeight()
         local scaleX, scaleY = GAME_SETTINGS.baseWidth / imgW, GAME_SETTINGS.baseHeight / imgH
         love.graphics.draw(self.images.tavern, 0, 0, 0, scaleX, scaleY)
-        
-        
+
         -- draw party
         world:draw()
 
         -- draw table
         local tableScale = 3
         love.graphics.draw(self.images.table, 150, 200, 0, tableScale, tableScale)
+    elseif self.mode == 'dungeon' or self.mode == 'recap' then
+        -- draw environment
+        local imgW, imgH = self.images.dungeon:getWidth(), self.images.dungeon:getHeight()
+        local scaleX, scaleY = GAME_SETTINGS.baseWidth / imgW, GAME_SETTINGS.baseHeight / imgH
+        love.graphics.draw(self.images.dungeon, 0, 0, 0, scaleX, scaleY)
 
-
-    elseif self.mode == 'dungeon' then
     end
 
     -- draw UI
@@ -389,7 +406,7 @@ end
 
 function DungeonPlanner:addPartyMember(class)
     local x, y = 100 + love.math.random(600), 187
-    y = y + #self.party * 4        -- simulate basic z-sorting
+    y = y + #self.party * 4 -- simulate basic z-sorting
 
     local pm = PartyMember(class, x, y)
     if pm.cost <= self.inventory.gold then

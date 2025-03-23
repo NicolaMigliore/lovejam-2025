@@ -3,6 +3,7 @@ require 'globals'
 
 function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
+    love.graphics.setFont(love.graphics.newFont(14, "normal"))
 
     -- Configure Luis grid
     -- Luis.setGridSize(20)

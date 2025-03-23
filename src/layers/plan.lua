@@ -62,7 +62,7 @@ function Plan:createLayer()
             -- text = member.race .. ' ' .. member.class
             text = member.class .. ' ' .. member.name
         end
-        local l_name = Luis.newLabel(text, lW, lH, offsetRow, offsetCol)
+        local l_name = Luis.newLabel(text, lW, lH, offsetRow, offsetCol, 'left', GAME_SETTINGS.labelTheme)
         c_party:addChild(l_name, offsetRow, offsetCol)
         offsetRow = offsetRow + lH
 
@@ -71,7 +71,7 @@ function Plan:createLayer()
         if member then
             text = 'HP: ' .. Utils:round(member.hp, 2) .. '   DMG: ' .. member.dmg
         end
-        local l_stats = Luis.newLabel(text, lW, lH, offsetRow, offsetCol)
+        local l_stats = Luis.newLabel(text, lW, lH, offsetRow, offsetCol, 'left', GAME_SETTINGS.labelTheme)
         c_party:addChild(l_stats, offsetRow, offsetCol)
         offsetRow = offsetRow + lH
         -- Equipment
@@ -113,7 +113,7 @@ function Plan:createLayer()
 
     offsetCol = offsetCol + iS
     local text = 'gold: ' .. tostring(self.inventory.gold)
-    local l_gold = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow, offsetCol)
+    local l_gold = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow, offsetCol, 'left', GAME_SETTINGS.labelTheme)
     c_inventory:addChild(l_gold, offsetRow, offsetCol)
     offsetRow = offsetRow + 3
 
@@ -132,7 +132,7 @@ function Plan:createLayer()
 
     offsetCol = offsetCol + iS
     local text = 'food: ' .. tostring(self.inventory.food)
-    local l_food = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow, offsetCol, 'center')
+    local l_food = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow, offsetCol, 'left', GAME_SETTINGS.labelTheme)
     c_inventory:addChild(l_food, offsetRow, offsetCol)
 
     offsetCol = offsetCol + lW + 1
@@ -157,7 +157,7 @@ function Plan:createLayer()
 
     offsetCol = offsetCol + iS
     local text = 'Potions: ' .. tostring(self.inventory.potions)
-    local l_potions = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow, offsetCol, 'center')
+    local l_potions = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow, offsetCol, 'left', GAME_SETTINGS.labelTheme)
     c_inventory:addChild(l_potions, offsetRow, offsetCol)
 
     offsetCol = offsetCol + lW + 1
@@ -181,7 +181,7 @@ function Plan:createLayer()
 
     offsetCol = offsetCol + iS
     local text = 'Target Flor: ' .. tostring(self.targetFloor)
-    local l_targetFloor = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow, offsetCol)
+    local l_targetFloor = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow, offsetCol, 'left', GAME_SETTINGS.labelTheme)
     c_inventory:addChild(l_targetFloor, offsetRow, offsetCol)
 
     offsetCol = offsetCol + lW + 1

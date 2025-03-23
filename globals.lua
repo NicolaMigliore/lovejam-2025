@@ -34,4 +34,9 @@ GAME_SETTINGS = {
     playMusic = true,
     baseWidth = 1280,
     baseHeight = 720,
+    labelTheme = {
+        color = { .06, .1, .12, 1},
+        font = love.graphics.newFont(14, "normal"),
+        align = "left",
+    }
 }

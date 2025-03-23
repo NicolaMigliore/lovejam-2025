@@ -2,6 +2,7 @@ local Dungeon = Object:extend()
 
 local pW, pH = 40, 2
 local lW, lH = 15, 1
+local borderImage = love.graphics.newImage('assets/ui.png')
 
 function Dungeon:new(dungeonEvents, questPercentage, targetFloor, currentFloor, party, events)
     self.layerName = 'dungeon'
@@ -49,7 +50,8 @@ function Dungeon:createLayer()
         if evt then
             text = text .. ' - ' .. evt.label .. ' ' .. evt.modifier
         end
-        local l_floor = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow + index * 2, offsetCol, 'center')
+        local l_floor = Luis.createElement(self.layerName, 'Label', text, lW, lH, offsetRow + index * 2, offsetCol, 'center', GAME_SETTINGS.labelTheme)
+        l_floor:setDecorator("Slice9Decorator", borderImage, 6, 6, 6, 6)
 
         -- save item
         table.insert(self.floorItems, { label = l_floor, row = offsetRow + index * 2, col = offsetCol })
@@ -108,10 +110,10 @@ function Dungeon:update(dt, dungeonEvents, questPercentage, targetFloor, current
         item.label:setShow(show)
 
         -- set decorator
-        item.label:setDecorator(nil)
-        if currentIndex == index then
-            item.label:setDecorator("GlowDecorator", { 1, 0.5, 0, 0.1 }, 3)
-        end
+        -- item.label:setDecorator(nil)
+        -- if currentIndex == index then
+        --     item.label:setDecorator("GlowDecorator", { 1, 0.5, 0, 0.1 }, 3)
+        -- end
         -- set position
         local yDelta = self.targetFloor * 2
         local row, col = item.row, item.col
@@ -145,7 +147,8 @@ function Dungeon:setFloorLabels()
 
         -- create or update label
         if not item then
-            item = Luis.createElement(self.layerName, 'Label', text, lW, lH, row, offsetCol, 'center')
+            item = Luis.createElement(self.layerName, 'Label', text, lW, lH, row, offsetCol, 'center', GAME_SETTINGS.labelTheme)
+            item:setDecorator("Slice9Decorator", borderImage, 6, 6, 6, 6)
             -- save item
             table.insert(self.floorItems, { label = item, row = row, col = offsetCol })
         else
