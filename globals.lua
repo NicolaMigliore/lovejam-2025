@@ -31,5 +31,7 @@ GAME_STATES = {
 }
 
 GAME_SETTINGS = {
-    playMusic = true
+    playMusic = true,
+    baseWidth = 1280,
+    baseHeight = 720,
 }

@@ -8,11 +8,11 @@ function love.load()
     -- Luis.setGridSize(20)
 
     -- Set your base resolution
-    Luis.baseWidth = 1280
-    Luis.baseHeight = 720
+    Luis.baseWidth = GAME_SETTINGS.baseWidth
+    Luis.baseHeight = GAME_SETTINGS.baseHeight
 
     -- Set window mode using these dimensions
-    love.window.setMode(Luis.baseWidth, Luis.baseHeight, { resizable=true, fullscreen = false })
+    love.window.setMode(Luis.baseWidth, Luis.baseHeight, { resizable=true, fullscreen = false, display = 1 })
     Luis.setGridSize(Luis.baseWidth / 60)
 
     -- Configure game states

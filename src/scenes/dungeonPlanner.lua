@@ -21,6 +21,7 @@ local partyClasses = { 'rogue', 'mage', 'warrior', 'archer' }
 
 function DungeonPlanner:enter()
     -- load images
+    self.images.tavern = love.graphics.newImage('assets/tavern.png') 
     self.images.table = love.graphics.newImage('assets/table.png')
 
     -- load music    
@@ -238,10 +239,19 @@ end
 function DungeonPlanner:draw()
     if self.mode == 'plan' then
         -- draw environment
-        love.graphics.draw(self.images.table, 150, 200, 0, 3, 3)
+        local imgW, imgH = self.images.tavern:getWidth(), self.images.tavern:getHeight()
+        local scaleX, scaleY = GAME_SETTINGS.baseWidth / imgW, GAME_SETTINGS.baseHeight / imgH
+        love.graphics.draw(self.images.tavern, 0, 0, 0, scaleX, scaleY)
+        
         
         -- draw party
         world:draw()
+
+        -- draw table
+        local tableScale = 3
+        love.graphics.draw(self.images.table, 150, 200, 0, tableScale, tableScale)
+
+
     elseif self.mode == 'dungeon' then
     end
 
@@ -378,8 +388,8 @@ function DungeonPlanner:setModeRecap()
 end
 
 function DungeonPlanner:addPartyMember(class)
-    local x, y = 100 + love.math.random(600), 100 --+ love.math.random(80)
-    y = y + #self.party * 20        -- simulate basic z-sorting
+    local x, y = 100 + love.math.random(600), 187
+    y = y + #self.party * 4        -- simulate basic z-sorting
 
     local pm = PartyMember(class, x, y)
     if pm.cost <= self.inventory.gold then
