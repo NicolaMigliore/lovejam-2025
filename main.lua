@@ -13,7 +13,7 @@ function love.load()
     Luis.baseHeight = GAME_SETTINGS.baseHeight
 
     -- Set window mode using these dimensions
-    love.window.setMode(Luis.baseWidth, Luis.baseHeight, { resizable=true, fullscreen = false, display = 1 })
+    love.window.setMode(Luis.baseWidth, Luis.baseHeight, { resizable=false, fullscreen = false, display = 1 })
     Luis.setGridSize(Luis.baseWidth / 60)
 
     -- Configure game states
