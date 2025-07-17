@@ -3,7 +3,7 @@ local Plan = Object:extend()
 local IconsImage = love.graphics.newImage('assets/icons.png')
 IconsImage:setFilter('nearest', 'nearest')
 local partyClasses = { 'rogue', 'archer', 'mage', 'warrior' }
-local partyClassLabels = { 'rogue (F:1, C:4)', 'archer (F:3, C:6)', 'mage (F:4, C:6)', 'warrior (F:5, C:10)'}
+local partyClassLabels = { 'rogue (F:1, C:4)', 'archer (F:3, C:6)', 'mage (F:4, C:8)', 'warrior (F:5, C:10)'}
 
 function Plan:new(party, inventory, targetFloor, days, events)
     self.layerName = 'plan'
@@ -228,8 +228,9 @@ function Plan:createLayer()
 end
 
 function Plan:update(dt, party, inventory, targetFloor, days)
+    local oldPartySize = #self.party
     -- update props
-    self.party = party
+    -- self.party = party
     self.inventory = inventory
     self.targetFloor = targetFloor
     self.days = days
@@ -244,9 +245,12 @@ function Plan:update(dt, party, inventory, targetFloor, days)
                 item.l_stats:setText('HP: ' .. Utils:round(member.hp, 2) .. '   DMG: ' .. member.dmg)
 
                 -- create missing icon
-                local animation = member.animationController.animations.idle
+                local animation = member:makeAnimation('idle')
                 if item.ia_avatar then
-                    item.ia_avatar:setAnimation(animation)
+                    -- check if party size has changed
+                    -- if oldPartySize ~= #self.party then
+                        item.ia_avatar:setAnimation(animation)
+                    -- end
                 else
                     local ia_avatar = Luis.newIconAnimated(member.animationController.image, animation, 2, (index * 3) - 1, 10, nil)
                     self.containers.c_party:addChild(ia_avatar, (index * 3) - 1, 9)
@@ -269,6 +273,31 @@ function Plan:update(dt, party, inventory, targetFloor, days)
     self.inventoryItems.food.label:setText('Food: ' .. tostring(self.inventory.food))
     self.inventoryItems.potions.label:setText('Potions: ' .. tostring(self.inventory.potions))
     self.inventoryItems.targetFloor.label:setText('Floor: ' .. tostring(self.targetFloor))
+end
+
+function Plan:refreshIcons()
+    for index = 1, self.maxPartySize, 1 do
+        local member = self.party[index]
+        local item = self.partyItems[index]
+        if item then
+            if member then
+                -- create missing icon
+                local animation = member:makeAnimation('idle')
+                if item.ia_avatar then
+                    item.ia_avatar:setAnimation(animation)
+                else
+                    local ia_avatar = Luis.newIconAnimated(member.animationController.image, animation, 2, (index * 3) - 1, 10, nil)
+                    self.containers.c_party:addChild(ia_avatar, (index * 3) - 1, 9)
+                    item.ia_avatar = ia_avatar
+                end
+            else
+                if item.ia_avatar then
+                    self.containers.c_party:removeChild(item.ia_avatar)
+                    item.ia_avatar = nil
+                end
+            end
+        end
+    end
 end
 
 function Plan:showLayer()

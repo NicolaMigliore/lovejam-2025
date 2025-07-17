@@ -1,6 +1,6 @@
 local Event = Object:extend()
 
-function Event:new(type, code, label, icon, target, targetAttribute, modifier)
+function Event:new(type, code, label, icon, target, targetAttribute, modifier, getRecapFn)
     self.type = type
     self.code = code
     self.label = label
@@ -8,6 +8,7 @@ function Event:new(type, code, label, icon, target, targetAttribute, modifier)
     self.target = target
     self.targetAttribute = targetAttribute
     self.modifier = modifier
+    self.getRecapFn = getRecapFn
 end
 
 function Event:__tostring()

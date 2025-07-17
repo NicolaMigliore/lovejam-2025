@@ -38,13 +38,25 @@ function PartyMember:new(class, x, y)
     local animGrid = Anim8.newGrid(32, 32, self.image:getDimensions())
     local durationMod = math.random() * .05
     self.animations = {
-        idle = Anim8.newAnimation(animGrid('1-4', classItem.idleFramesRow), .1 + durationMod)
+        -- idle = Anim8.newAnimation(animGrid('1-4', classItem.idleFramesRow), .1 + durationMod)
+        idle = self:makeAnimation('idle')
     }
     self.animationController = AnimationController(self.image, self.animations, 'idle')
 
     -- other components
     self.body = Body(Vector(x, y))
     self.size = Size(250, 250)
+end
+
+function PartyMember:makeAnimation(animName)
+    local animation
+    local animGrid = Anim8.newGrid(32, 32, self.image:getDimensions())
+    local durationMod = math.random() * .05
+    local classItem = classes[self.class]
+    if animName == 'idle' then
+        animation = Anim8.newAnimation(animGrid('1-4', classItem.idleFramesRow), .1 + durationMod)
+    end
+    return animation
 end
 
 return PartyMember

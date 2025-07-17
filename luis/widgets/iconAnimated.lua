@@ -12,6 +12,7 @@ end
 function icon.new(iconPath, animation, size, row, col, customTheme)
     local iconTheme = customTheme or luis.theme.icon
     local icon = iconPath
+
     if type(iconPath) == 'string' then
         icon = love.graphics.newImage(iconPath)
     end
@@ -24,16 +25,17 @@ function icon.new(iconPath, animation, size, row, col, customTheme)
 		theme = iconTheme,
 		decorator = nil,
         animation = animation,
+        show = true,
+
+        update = function(self, mx, my, dt)
+            self.animation:update(dt)
+        end,
 
         defaultDraw = function(self)
-            love.graphics.setColor(iconTheme.color)
-            self.animation:draw(self.iconImage, self.position.x, self.position.y, 0, self.width / 32, self.height / 32)
-            -- if self.quad then
-            --     -- love.graphics.draw(self.icon, self.quad, self.position.x, self.position.y, 0, self.width / self.icon:getWidth(), self.height / self.icon:getHeight())
-            --     love.graphics.draw(self.icon, self.quad, self.position.x, self.position.y, 0, self.width / 16, self.height / 16)
-            -- else
-            --     love.graphics.draw(self.icon, self.position.x, self.position.y, 0, self.width / self.icon:getWidth(), self.height / self.icon:getHeight())
-            -- end
+            if self.show then
+                love.graphics.setColor(iconTheme.color)
+                self.animation:draw(self.iconImage, self.position.x, self.position.y, 0, self.width / 32, self.height / 32)
+            end
         end,
 
 		-- Draw method that can use a decorator
@@ -60,6 +62,9 @@ function icon.new(iconPath, animation, size, row, col, customTheme)
         setPosition = function(self, r, c)
             self.position = Vector2D.new((c - 1) * luis.gridSize, (r - 1) * luis.gridSize)
         end,
+        setShow = function(self, show)
+            self.show = show
+        end
     }
 end
 

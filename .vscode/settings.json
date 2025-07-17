@@ -3,5 +3,11 @@
         "activityBar.background": "#1F3309",
         "titleBar.activeBackground": "#2B470D",
         "titleBar.activeForeground": "#F5FCEE"
-    }
+    },
+    "Lua.diagnostics.globals": [
+        "love"
+    ],
+    "cSpell.words": [
+        "keypressed"
+    ]
 }

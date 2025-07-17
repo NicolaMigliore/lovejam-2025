@@ -4,10 +4,9 @@ local GraphicsSystem = require 'src.systems.graphicsSystem'
 
 local world = ECSWorld()
 local Title = {
-    layers = {},
+    assets = { images = {}, music = {}, sfx = {} },
     images = {},
-    music = {},
-    sfx = {},
+    layers = {},
 }
 
 function Title:enter()
@@ -15,28 +14,29 @@ function Title:enter()
     self.layers.mainMenu:showLayer()
 
     -- load image
-    self.images.background = love.graphics.newImage('assets/title.png')
+    self.assets.images.background = love.graphics.newImage('assets/title.png')
 
     -- load sounds
-    self.music.title = love.audio.newSource('assets/music/649132__sonically_sound__medievalfantasy-rpg-loop-mix-at-32-secs-to-extendrepeat.flac', 'stream')
-    self.music.title:play()
-    self.sfx.click = love.audio.newSource('assets/sounds/click.wav', 'static')
+    self.assets.music.title = love.audio.newSource('assets/music/649132__sonically_sound__medievalfantasy-rpg-loop-mix-at-32-secs-to-extendrepeat.flac', 'stream')
+    self.assets.sfx.click = love.audio.newSource('assets/sounds/click.wav', 'static')
 end
 
 function Title:update(dt)
-
+    if GAME_SETTINGS.playMusic and not self.assets.music.title:isPlaying() then
+        self.assets.music.title:play()
+    end
 end
 
 function Title:draw()
-    local imgW, imgH = self.images.background:getWidth(), self.images.background:getHeight()
+    local imgW, imgH = self.assets.images.background:getWidth(), self.assets.images.background:getHeight()
     local scaleX, scaleY = GAME_SETTINGS.baseWidth / imgW, GAME_SETTINGS.baseHeight / imgH
-    love.graphics.draw(self.images.background, 0, 0, 0, scaleX, scaleY)
+    love.graphics.draw(self.assets.images.background, 0, 0, 0, scaleX, scaleY)
     Luis.draw()
 end
 
 function Title:leave()
     Luis.removeLayer(self.layers.mainMenu.layerName)
-    love.audio.stop(self.music.title)
+    love.audio.stop(self.assets.music.title)
 end
 
 function Title:keypressed(key, code, isRepeat)
@@ -74,7 +74,7 @@ function Title:generateMainMenu()
     local bW, bH = 9, 2
     offsetRow = cH / 2 - bH / 2
     offsetCol = (cW / 2 - bW / 2) + 1.5
-    local b_add_member = Luis.newButton('New Game', bW, bH, function() GameState.switch(GAME_STATES.dungeonPlanner) self.sfx.click:play() end,
+    local b_add_member = Luis.newButton('New Game', bW, bH, function() GameState.switch(GAME_STATES.dungeonPlanner) self.assets.sfx.click:play() end,
     nil, offsetRow, offsetCol)
     c_mainMenu:addChild(b_add_member, offsetRow, offsetCol)
 

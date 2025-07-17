@@ -32,14 +32,14 @@ function flexContainer.new(width, height, row, col, customTheme, containerName)
         theme = containerTheme,
         decorator = nil,
         visible = true, -- New visibility property, default is visible
-        
+
         -- Check if a child already exists in the container
         hasChild = function(self, child)
             -- First check if child is nil
             if not child then
                 return false
             end
-            
+
             -- Check direct reference match
             for _, existingChild in ipairs(self.children) do
                 if existingChild == child then
