@@ -4,9 +4,14 @@
         "titleBar.activeBackground": "#2B470D",
         "titleBar.activeForeground": "#F5FCEE"
     },
+    "Lua.runtime.version": "LuaJIT",
     "Lua.diagnostics.globals": [
-        "love"
+        "love",
     ],
+    "Lua.workspace.library": [
+        "${3rd}/love2d/library"
+    ],
+    "Lua.workspace.checkThirdParty": false,
     "cSpell.words": [
         "keypressed"
     ]

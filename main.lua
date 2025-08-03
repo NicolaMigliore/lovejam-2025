@@ -1,6 +1,10 @@
 
 require 'globals'
 
+if arg[2] == "debug" then
+    require("lldebugger").start()
+end
+
 function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
     love.graphics.setFont(love.graphics.newFont(14, "normal"))
