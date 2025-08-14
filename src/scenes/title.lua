@@ -72,11 +72,17 @@ function Title:generateMainMenu()
 
     -- buttons
     local bW, bH = 9, 2
-    offsetRow = cH / 2 - bH / 2
+    offsetRow = cH / 2 - bH
     offsetCol = (cW / 2 - bW / 2) + 1.5
-    local b_add_member = Luis.newButton('New Game', bW, bH, function() GameState.switch(GAME_STATES.dungeonPlanner) self.assets.sfx.click:play() end,
+
+    local b_newgame = Luis.newButton('New Game', bW, bH, function() GameState.switch(GAME_STATES.dungeonPlanner) self.assets.sfx.click:play() end,
     nil, offsetRow, offsetCol)
-    c_mainMenu:addChild(b_add_member, offsetRow, offsetCol)
+    c_mainMenu:addChild(b_newgame, offsetRow, offsetCol)
+
+    offsetRow = offsetRow + bH + 1
+    local b_tutorial = Luis.newButton('Tutorial', bW, bH, function() GameState.switch(GAME_STATES.tutorial) self.assets.sfx.click:play() end,
+    nil, offsetRow, offsetCol)
+    c_mainMenu:addChild(b_tutorial, offsetRow, offsetCol)
 
 
     local layerItem = {

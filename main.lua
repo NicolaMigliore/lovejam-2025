@@ -58,9 +58,7 @@ end
 
 function love.keypressed(key)
     if key == "escape" then
-        if Luis.currentLayer == "main" then
-            love.event.quit()
-        end
+        love.event.quit()
     elseif key == "tab" then -- Debug View
         Luis.showGrid = not Luis.showGrid
         Luis.showLayerNames = not Luis.showLayerNames

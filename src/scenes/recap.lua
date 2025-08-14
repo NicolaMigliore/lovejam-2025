@@ -63,9 +63,6 @@ end
 -- Mark: Leave
 function Recap:leave()
     Luis.removeLayer('recap')
-
-    print('love.audio.getActiveEffects', Inspect(love.audio.getActiveEffects()))
-
     self.assets.music.dungeon:stop()
     self.assets.music.drip:stop()
 end

@@ -1,7 +1,4 @@
 local Plan = require 'src.layers.plan'
-local Dungeon = require 'src.layers.dungeon'
-local Recap = require 'src.layers.recap'
-local Event = require 'src.event'
 local PartyMember = require 'src.entities.partyMember'
 
 local GraphicsSystem = require 'src.systems.graphicsSystem'
@@ -10,13 +7,12 @@ local world
 local DungeonPlanner = {
     systems = {},
     layers = {},
-    modes = { 'plan', 'dungeon', 'result' },
     images = {},
     music = {},
     sfx = {},
     inventory = {
         food = 0,
-        gold = 10,
+        gold = 12,
         potions = 0,
     },
     targetFloor = 1,
@@ -57,13 +53,8 @@ function DungeonPlanner:enter(previousState, inventory, targetFloor, party)
     self.inventory = inventory or self.inventory
 
     self.targetFloor = targetFloor or self.targetFloor
-    self.currentFloor = 0
-    self.events = {}
-    self.executedEvents = {}
-    self.recap = {}
 
     self.days = 0
-    self.quest = 0
 
 
     -- reset world
@@ -90,9 +81,27 @@ function DungeonPlanner:enter(previousState, inventory, targetFloor, party)
             end
         end,
         clickFoodPlus = function()
-            if self.inventory.gold > 1 then
+            if self.inventory.gold >= cost.food then
                 self.inventory.gold = self.inventory.gold - cost.food
                 self.inventory.food = self.inventory.food + 1
+                self.sfx.click:play()
+            else
+                self.sfx.noGold:play()
+            end
+        end,
+        clickPotionsMinus = function()
+            if self.inventory.potions > 0 then
+                self.inventory.gold = self.inventory.gold + cost.potion
+                self.inventory.potions = self.inventory.potions - 1
+                self.sfx.click:play()
+            else
+                self.sfx.noGold:play()
+            end
+        end,
+        clickPotionsPlus = function()
+            if self.inventory.gold >= cost.potion then
+                self.inventory.gold = self.inventory.gold - cost.potion
+                self.inventory.potions = self.inventory.potions + 1
                 self.sfx.click:play()
             else
                 self.sfx.noGold:play()
@@ -114,29 +123,11 @@ function DungeonPlanner:enter(previousState, inventory, targetFloor, party)
                 self.sfx.noGold:play()
             end
         end,
-        clickPotionsMinus = function()
-            if self.inventory.potions > 0 then
-                self.inventory.gold = self.inventory.gold + cost.potion
-                self.inventory.potions = self.inventory.potions - 1
-                self.sfx.click:play()
-            else
-                self.sfx.noGold:play()
-            end
-        end,
-        clickPotionsPlus = function()
-            if self.inventory.gold > 4 then
-                self.inventory.gold = self.inventory.gold - cost.potion
-                self.inventory.potions = self.inventory.potions + 1
-                self.sfx.click:play()
-            else
-                self.sfx.noGold:play()
-            end
-        end,
         clickConfirm = function()
             if #self.party > 0 then
-                self:setModeDungeon()
                 self.days = self.days + 1
                 self.sfx.click:play()
+                self:setModeDungeon()
             else
                 self.sfx.noGold:play()
             end
@@ -241,10 +232,6 @@ end
 
 function DungeonPlanner:setModePlan()
     self.layers.plan:showLayer()
-
-    -- Reset events
-    self.executedEvents = {}
-
     -- play music
     -- love.audio.stop(self.music.dungeon)
     -- love.audio.stop(self.sfx.drip)

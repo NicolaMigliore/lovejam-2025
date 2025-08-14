@@ -3,7 +3,7 @@ local Plan = Object:extend()
 local IconsImage = love.graphics.newImage('assets/icons.png')
 IconsImage:setFilter('nearest', 'nearest')
 local partyClasses = { 'rogue', 'archer', 'mage', 'warrior' }
-local partyClassLabels = { 'rogue (F:1, C:4)', 'archer (F:3, C:6)', 'mage (F:4, C:8)', 'warrior (F:5, C:10)'}
+local defaultClassLabels = { 'rogue (F:1, C:4)', 'archer (F:3, C:6)', 'mage (F:4, C:8)', 'warrior (F:5, C:10)'}
 
 function Plan:new(party, inventory, targetFloor, days, events)
     self.layerName = 'plan'
@@ -18,6 +18,7 @@ function Plan:new(party, inventory, targetFloor, days, events)
     self.inventory = inventory
     self.targetFloor = targetFloor
     self.days = days
+    self.partyClassLabels = defaultClassLabels
 
     self.maxPartySize = 4
     self.partyItems = {}
@@ -54,7 +55,7 @@ function Plan:createLayer()
 
     local lW, lH = 7, 1
     local iS = 2
-    -- Party Items
+    -- MARK: Party Items
     for index = 1, self.maxPartySize, 1 do
         local member = self.party[index]
 
@@ -91,8 +92,8 @@ function Plan:createLayer()
     offsetCol = 2
     offsetRow = offsetRow + 1
     local ddW, ddH = 11, 2
-    local dd_nextClass = Luis.createElement(self.layerName, 'DropDown', partyClassLabels, nil, ddW, ddH, function(val)
-        local index = Lume.find(partyClassLabels, val)
+    local dd_nextClass = Luis.createElement(self.layerName, 'DropDown', self.partyClassLabels, nil, ddW, ddH, function(val)
+        local index = Lume.find(self.partyClassLabels, val)
         local newClass = partyClasses[index]
         self.events.nextPartyMemberChange(newClass) end
     , offsetRow, offsetCol, 4)
@@ -104,7 +105,7 @@ function Plan:createLayer()
     c_party:addChild(b_add_member, offsetRow, offsetCol)
 
 
-    -- Inventory Items
+    -- MARK: Inventory Items
     offsetRow = 2
     lW, lH = 4, 2
 
@@ -218,16 +219,23 @@ function Plan:createLayer()
     self.inventoryItems.potions = { b_minus = b_food_minus, label = l_potions, b_plus = b_food_plus }
     self.inventoryItems.targetFloor = { b_minus = b_targetFloor_minus, label = l_targetFloor, b_plus = b_targetFloor_plus }
 
-    -- Confirm
+    --MARK: Confirm button
+    cW, cH = 20, 3
+    offsetRow = self.gridMaxRow - cH
+    offsetCol = self.gridMaxCol / 2 - cW / 2
+    local c_confirm = Luis.createElement(self.layerName, 'FlexContainer2', cW, cH, offsetRow, offsetCol, nil, 'inventoryContainer')
+    self.containers.c_confirm = c_confirm
+
     bW, bH = 20, 3
     offsetRow = self.gridMaxRow - bH
     offsetCol = self.gridMaxCol / 2 - bW / 2
-    Luis.createElement(self.layerName, 'Button', 'Confirm', bW, bH, function() self.events.clickConfirm() end, nil,
-        offsetRow,
-        offsetCol)
+    local b_confirm = Luis.createElement(self.layerName, 'Button', 'Confirm', bW, bH,
+        function() self.events.clickConfirm() end, nil,
+        offsetRow, offsetCol)
+    c_confirm:addChild(b_confirm, 1, 1)
 end
 
-function Plan:update(dt, party, inventory, targetFloor, days)
+function Plan:update(dt, party, inventory, targetFloor, days, showList)
     local oldPartySize = #self.party
     -- update props
     -- self.party = party
@@ -247,10 +255,7 @@ function Plan:update(dt, party, inventory, targetFloor, days)
                 -- create missing icon
                 local animation = member:makeAnimation('idle')
                 if item.ia_avatar then
-                    -- check if party size has changed
-                    -- if oldPartySize ~= #self.party then
-                        item.ia_avatar:setAnimation(animation)
-                    -- end
+                    item.ia_avatar:setAnimation(animation)
                 else
                     local ia_avatar = Luis.newIconAnimated(member.animationController.image, animation, 2, (index * 3) - 1, 10, nil)
                     self.containers.c_party:addChild(ia_avatar, (index * 3) - 1, 9)
@@ -273,6 +278,27 @@ function Plan:update(dt, party, inventory, targetFloor, days)
     self.inventoryItems.food.label:setText('Food: ' .. tostring(self.inventory.food))
     self.inventoryItems.potions.label:setText('Potions: ' .. tostring(self.inventory.potions))
     self.inventoryItems.targetFloor.label:setText('Floor: ' .. tostring(self.targetFloor))
+
+    -- manage visibility
+    if showList then
+        if showList[1] then
+            self.containers.c_party:show()
+        else
+            self.containers.c_party:hide()
+        end
+
+        if showList[2] then
+            self.containers.c_inventory:show()
+        else
+            self.containers.c_inventory:hide()
+        end
+
+        if showList[3] then
+            self.containers.c_confirm:show()
+        else
+            self.containers.c_confirm:hide()
+        end
+    end
 end
 
 function Plan:refreshIcons()

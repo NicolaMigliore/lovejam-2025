@@ -26,6 +26,7 @@ Luis.flux = require("luis.3rdparty.flux")
 -- Register game states
 GAME_STATES = {
     title = require 'src.scenes.title',
+    tutorial = require 'src.scenes.tutorial',
     dungeonPlanner = require 'src.scenes.dungeonPlanner',
     dungeon = require 'src.scenes.dungeon',
     recap = require 'src.scenes.recap',

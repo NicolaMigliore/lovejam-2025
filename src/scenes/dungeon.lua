@@ -19,7 +19,7 @@ local Dungeon = {
 }
 
 -- Mark: Enter
-function Dungeon:enter(previousState, inventory, targetFloor, party)
+function Dungeon:enter(previousState, inventory, targetFloor, party, events)
     -- reset state
     self.inventory = inventory
     self.events = {}
@@ -30,7 +30,11 @@ function Dungeon:enter(previousState, inventory, targetFloor, party)
     self.recap = {}
 
     -- generate events
-    self:generateEvents()
+    if events then
+        self.events = events
+    else
+        self:generateEvents()
+    end
 
     -- load assets
     self.assets.images.dungeon = love.graphics.newImage('assets/dungeon.png')
