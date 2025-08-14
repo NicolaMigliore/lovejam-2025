@@ -34,6 +34,7 @@ function dropDown.new(items, value, width, height, onChange, row, col, maxVisibl
         zIndex = 1,
         theme = dropdownTheme,
         decorator = nil,
+        visible = true, -- New visibility property, default is visible
 
         update = function(self, mx, my, dt)
             if self.isOpen then
@@ -111,6 +112,9 @@ function dropDown.new(items, value, width, height, onChange, row, col, maxVisibl
         end,
 
         draw = function(self)
+            -- Skip drawing if container is not visible
+            if not self.visible then return end
+
             if self.decorator then
                 self.decorator:draw()
             else

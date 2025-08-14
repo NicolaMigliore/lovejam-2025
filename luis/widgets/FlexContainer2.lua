@@ -415,11 +415,25 @@ function flexContainer.new(width, height, row, col, customTheme, containerName)
         -- Hide the container and all children
         hide = function(self)
             self.visible = false
+            for i, child in ipairs(self.children) do
+                if child.visible ~= nil then
+                    child.visible = false
+                else
+                    child.show = false
+                end
+            end
         end,
         
         -- Show the container and all children
         show = function(self)
             self.visible = true
+            for i, child in ipairs(self.children) do
+                if child.visible ~= nil then
+                    child.visible = true
+                else
+                    child.show = true
+                end
+            end
         end,
         
         -- Toggle visibility

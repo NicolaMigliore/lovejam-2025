@@ -24,6 +24,7 @@ function icon.new(iconPath, size, row, col, customTheme, quad)
 		theme = iconTheme,
 		decorator = nil,
         quad = quad,
+        visible = true, -- New visibility property, default is visible
         
         defaultDraw = function(self)
             love.graphics.setColor(iconTheme.color)
@@ -37,6 +38,9 @@ function icon.new(iconPath, size, row, col, customTheme, quad)
 
 		-- Draw method that can use a decorator
 		draw = function(self)
+            -- Skip drawing if container is not visible
+            if not self.visible then return end
+
 			if self.decorator then
 				self.decorator:draw()
 			else

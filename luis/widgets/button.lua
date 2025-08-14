@@ -46,6 +46,7 @@ function button.new(text, width, height, onClick, onRelease, row, col, customThe
         elevation = buttonTheme.elevation,
 		theme = buttonTheme,
 		decorator = nil,
+        visible = true, -- New visibility property, default is visible
 
         update = function(self, mx, my)
             local wasHovered = self.hover
@@ -94,6 +95,9 @@ function button.new(text, width, height, onClick, onRelease, row, col, customThe
 
 		-- Draw method that can use a decorator
 		draw = function(self)
+            -- Skip drawing if container is not visible
+            if not self.visible then return end
+
 			if self.decorator then
 				self.decorator:draw(self)
 			else
